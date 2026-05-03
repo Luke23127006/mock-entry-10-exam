@@ -1,0 +1,93 @@
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { submitWritingFeedback } from '@/app/actions/teacher'
+import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
+import WritingFeedbackCard from '@/components/teacher/WritingFeedbackCard'
+import type { Exam, ExamAttempt, User, Question, WritingFeedback } from '@/types/database'
+
+interface Props {
+  params: Promise<{ attemptId: string }>
+}
+
+export default async function FeedbackPage({ params }: Props) {
+  const { attemptId } = await params
+
+  const { data: attempt } = await supabase
+    .from('exam_attempts')
+    .select('*')
+    .eq('id', attemptId)
+    .single<ExamAttempt>()
+
+  if (!attempt || attempt.status !== 'completed') redirect('/teacher/attempts')
+
+  const [{ data: exam }, { data: student }] = await Promise.all([
+    supabase.from('exams').select('*').eq('id', attempt.exam_id).single<Exam>(),
+    supabase.from('users').select('full_name, username').eq('id', attempt.user_id).single<Pick<User, 'full_name' | 'username'>>(),
+  ])
+
+  if (!exam) redirect('/teacher/attempts')
+
+  const writingQuestions = exam.content.questions.filter((q: Question) => q.type === 'writing')
+  const existingFeedback = (attempt.feedback ?? {}) as Record<string, WritingFeedback>
+
+  async function handleSubmit(formData: FormData) {
+    'use server'
+    const feedback: Record<string, WritingFeedback> = {}
+    for (const q of writingQuestions) {
+      const score = parseFloat(formData.get(`feedback[${q.id}][score]`) as string) || 0
+      const comment = (formData.get(`feedback[${q.id}][comment]`) as string) ?? ''
+      feedback[q.id] = { score, comment }
+    }
+    await submitWritingFeedback(attemptId, feedback)
+  }
+
+  let questionNumber = 0
+  const allQuestions = exam.content.questions
+  const questionNumbers = new Map<string, number>()
+  for (const q of allQuestions) {
+    questionNumbers.set(q.id, ++questionNumber)
+  }
+
+  return (
+    <main className="min-h-screen bg-muted/30 py-10 px-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Chấm bài tự luận</h1>
+            <p className="text-sm text-muted-foreground">
+              {student?.full_name ?? student?.username} — {exam.title}
+            </p>
+          </div>
+          <Link href="/teacher/attempts" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            ← Quay lại
+          </Link>
+        </div>
+
+        {writingQuestions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Đề thi này không có câu tự luận.</p>
+        ) : (
+          <form action={handleSubmit} className="space-y-4">
+            {writingQuestions.map((q: Question) => (
+              <WritingFeedbackCard
+                key={q.id}
+                question={q}
+                questionNumber={questionNumbers.get(q.id) ?? 0}
+                studentAnswer={
+                  typeof attempt.answers[q.id] === 'string'
+                    ? (attempt.answers[q.id] as string)
+                    : ''
+                }
+                existing={existingFeedback[q.id] ?? null}
+              />
+            ))}
+            <div className="flex justify-end pt-2">
+              <Button type="submit" size="lg">Lưu điểm & nhận xét</Button>
+            </div>
+          </form>
+        )}
+      </div>
+    </main>
+  )
+}

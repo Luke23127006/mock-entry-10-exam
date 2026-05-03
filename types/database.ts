@@ -1,6 +1,10 @@
+export type UserRole = 'student' | 'teacher'
+
 export interface Question {
   id: string
+  part: 'A' | 'B' | 'C' | 'D'
   type: 'single' | 'multiple' | 'writing'
+  pointValue: number
   content: string
   options?: string[]
   correctAnswers?: string[]
@@ -16,12 +20,18 @@ export interface User {
   username: string
   password: string
   full_name: string
+  role: UserRole
 }
 
 export interface Exam {
   id: string
   title: string
   content: ExamContent
+}
+
+export interface WritingFeedback {
+  score: number
+  comment: string
 }
 
 export interface ExamAttempt {
@@ -31,5 +41,5 @@ export interface ExamAttempt {
   answers: Record<string, string | string[]>
   status: 'draft' | 'completed'
   score: string
-  feedback: string
+  feedback: Record<string, WritingFeedback> | null
 }
