@@ -15,20 +15,36 @@ import { cn } from '@/lib/utils'
 interface ExamViewerProps {
   exam: ExamDefinition
   initialAnswers?: Record<string, any>
-  onSubmit?: (answers: Record<string, any>) => void
-  onExit?: (answers: Record<string, any>) => void
+  onSubmit?: (answers: Record<string, any>) => void | Promise<void>
+  onExit?: (answers: Record<string, any>) => void | Promise<void>
   isReviewMode?: boolean
 }
 
+import { Sparkles, Loader2 } from 'lucide-react'
+
 export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit, isReviewMode = false }: ExamViewerProps) {
   const [answers, setAnswers] = React.useState<Record<string, any>>(initialAnswers)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   
   const handleAnswerChange = (questionId: string, value: any) => {
-    if (isReviewMode) return
+    if (isReviewMode || isSubmitting) return
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value
     }))
+  }
+
+  const handleFinalSubmit = async () => {
+    if (window.confirm("Are you sure you want to submit your exam? This action cannot be undone.")) {
+      setIsSubmitting(true)
+      try {
+        await onSubmit?.(answers)
+      } finally {
+        // If the redirect doesn't happen immediately or there's an error,
+        // we might want to allow the user to try again.
+        setIsSubmitting(false)
+      }
+    }
   }
 
   let globalQuestionCounter = 0
@@ -110,17 +126,55 @@ export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit, isRevi
             
             <Button 
               size="lg" 
+              disabled={isSubmitting}
               className="w-full sm:w-auto px-10 h-12 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl"
-              onClick={() => {
-                if (window.confirm("Are you sure you want to submit your exam? This action cannot be undone.")) {
-                  onSubmit?.(answers)
-                }
-              }}
+              onClick={handleFinalSubmit}
             >
-              Submit Exam
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting...
+                </span>
+              ) : "Submit Exam"}
             </Button>
           </div>
         </footer>
+      )}
+
+      {/* AI Scoring Loading Overlay */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-500">
+          <Card className="max-w-md w-full mx-4 border-primary/20 shadow-2xl shadow-primary/10 overflow-hidden">
+            <div className="h-1.5 w-full bg-muted overflow-hidden">
+              <div className="h-full bg-primary animate-progress-indeterminate w-1/3" />
+            </div>
+            <CardContent className="p-10 text-center space-y-6">
+              <div className="relative inline-flex">
+                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+                <div className="relative bg-primary/10 p-5 rounded-3xl">
+                  <Sparkles className="h-10 w-10 text-primary animate-bounce" />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black tracking-tight text-foreground">AI Scoring in Progress</h3>
+                <p className="text-muted-foreground font-medium leading-relaxed">
+                  Please wait while our AI analyzes your writing responses. This may take up to a minute.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center gap-4 pt-4">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Analyzing Grammar & Structure
+                </div>
+                <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em]">
+                  Do not refresh or close this page
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )

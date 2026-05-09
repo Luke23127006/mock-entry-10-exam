@@ -43,7 +43,18 @@ export default async function FeedbackPage({ params }: Props) {
            part.includes('writing') ||
            !!q.rubric
   })
-  const existingFeedback = (attempt.feedback ?? {}) as Record<string, WritingFeedback>
+  let existingFeedback: Record<string, WritingFeedback> = {}
+  if (attempt.feedback) {
+    if (typeof attempt.feedback === 'string' && (attempt.feedback as string).trim() !== '') {
+      try {
+        existingFeedback = JSON.parse(attempt.feedback)
+      } catch (e) {
+        console.error('Failed to parse existing feedback:', e)
+      }
+    } else if (typeof attempt.feedback === 'object') {
+      existingFeedback = attempt.feedback as Record<string, WritingFeedback>
+    }
+  }
 
   async function handleSubmit(formData: FormData) {
     'use server'
