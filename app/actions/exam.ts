@@ -71,16 +71,18 @@ export async function submitExam(
     .eq('id', attempt.exam_id)
     .single<Pick<Exam, 'content'>>()
 
-  const questions = exam?.content?.questions ?? []
+  const content = exam?.content as any
+  const questions = content?.questions || content?.sections?.flatMap((s: any) => s.components) || []
   const { autoScore, maxAutoScore, hasWriting } = scoreExam(questions, answers)
 
-  const scoreText = hasWriting
-    ? `${autoScore}/${maxAutoScore} (phần viết chờ chấm)`
-    : `${autoScore}/${maxAutoScore}`
+  // Store the numerical autoScore as a fallback/initial score
+  // If there's writing, we might want to keep it as null until evaluated,
+  // but for now let's store the autoScore.
+  const scoreToStore = autoScore.toString()
 
   await supabase
     .from('exam_attempts')
-    .update({ answers, status: 'completed', score: scoreText })
+    .update({ answers, status: 'completed', score: scoreToStore })
     .eq('id', attemptId)
     .eq('user_id', session.id)
 

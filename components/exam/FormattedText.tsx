@@ -8,9 +8,10 @@ interface FormattedTextProps {
 export function FormattedText({ text, className }: FormattedTextProps) {
   if (!text) return null
 
-  // Regex to find __text__ and group the 'text'
-  // Using [^__] might be safer or just non-greedy .*?
-  const parts = text.split(/(__.*?__)/g)
+  // Refined regex: matches exactly two underscores (not preceded or followed by another underscore)
+  // then any characters that DON'T contain '__', then exactly two underscores again.
+  // This prevents it from matching across '___' or '_____' blanks.
+  const parts = text.split(/((?<!_)__(?!_)(?:(?!__).)+?(?<!_)__(?!_))/g)
 
   return (
     <span className={className}>
