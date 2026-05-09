@@ -8,15 +8,17 @@ interface FormattedTextProps {
 export function FormattedText({ text, className }: FormattedTextProps) {
   if (!text) return null
 
-  // Refined regex: matches exactly two underscores (not preceded or followed by another underscore)
-  // then any characters that DON'T contain '__', then exactly two underscores again.
-  // This prevents it from matching across '___' or '_____' blanks.
-  const parts = text.split(/((?<!_)__(?!_)(?:(?!__).)+?(?<!_)__(?!_))/g)
+  // Khai báo Regex bằng new RegExp dưới dạng String để tránh bị lỗi khi Next.js Minify code trên Production
+  const regexPattern = "((?<!_)__(?!_)(?:(?!__).)+?(?<!_)__(?!_))"
+  const regex = new RegExp(regexPattern, "g")
+  
+  const parts = text.split(regex)
 
   return (
     <span className={className}>
       {parts.map((part, index) => {
-        if (part.startsWith('__') && part.endsWith('__')) {
+        // Kiểm tra an toàn trước khi gọi startsWith/endsWith
+        if (part && part.startsWith('__') && part.endsWith('__')) {
           const content = part.slice(2, -2)
           return (
             <span key={index} className="underline decoration-2 underline-offset-4 font-bold text-primary/90">
