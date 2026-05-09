@@ -44,7 +44,7 @@ let userId = '';
 test.describe.serial('API Integration Flow', () => {
   
   test('1. Register', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+    const res = await request.post('/api/v1/auth/register', {
       data: TEST_USER
     });
     expect(res.ok()).toBeTruthy();
@@ -55,7 +55,7 @@ test.describe.serial('API Integration Flow', () => {
   });
 
   test('2. Login', async ({ request }) => {
-    const res = await request.post('/api/auth/login', {
+    const res = await request.post('/api/v1/auth/login', {
       data: {
         username: TEST_USER.username,
         password: TEST_USER.password
@@ -77,7 +77,7 @@ test.describe.serial('API Integration Flow', () => {
   });
 
   test('3. Upload Exam', async ({ request }) => {
-    const res = await request.post('/api/admin/upload-exam', {
+    const res = await request.post('/api/v1/admin/upload-exam', {
       data: TEST_EXAM
     });
     expect(res.ok()).toBeTruthy();
@@ -109,7 +109,7 @@ test.describe.serial('API Integration Flow', () => {
     attemptId = attempt!.id;
 
     // Test the save-draft API
-    const res = await request.post('/api/attempts/save-draft', {
+    const res = await request.post('/api/v1/attempts/save-draft', {
       headers: {
         'Cookie': `session_user_id=${userId}`
       },
@@ -135,7 +135,7 @@ test.describe.serial('API Integration Flow', () => {
     // Use a longer timeout for this specific test block since the Gemini API might take a few seconds
     test.setTimeout(30000);
 
-    const res = await request.post('/api/attempts/submit', {
+    const res = await request.post('/api/v1/attempts/submit', {
       headers: {
         'Cookie': `session_user_id=${userId}`
       },

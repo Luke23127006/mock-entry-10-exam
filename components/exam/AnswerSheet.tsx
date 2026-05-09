@@ -26,7 +26,7 @@ async function callSaveDraftApi(
   attemptId: string,
   answers: Record<string, string | string[]>,
 ): Promise<void> {
-  await fetch('/api/attempts/save-draft', {
+  await fetch('/api/v1/attempts/save-draft', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ attemptId, answers }),
@@ -91,7 +91,7 @@ export default function AnswerSheet({ attempt, exam }: Props) {
   const submitToApi = async () => {
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/attempts/submit', {
+      const res = await fetch('/api/v1/attempts/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ attemptId: attempt.id, answers: answersRef.current }),
