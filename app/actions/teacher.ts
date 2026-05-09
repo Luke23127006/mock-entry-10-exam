@@ -60,7 +60,7 @@ export async function submitWritingFeedback(
 
   await supabase
     .from('exam_attempts')
-    .update({ feedback, score: finalScore.toString() })
+    .update({ feedback, score: finalScore.toString(), is_graded: true })
     .eq('id', attemptId)
 
   redirect('/teacher/attempts')

@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
         status: 'completed',
         score: scoreText,
         feedback,
+        is_graded: false
       })
       .eq('id', attemptId)
       .eq('user_id', userId)

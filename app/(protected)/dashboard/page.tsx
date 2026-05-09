@@ -8,6 +8,8 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import type { Exam, ExamAttempt } from '@/types/database'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const session = await getSession()
   if (!session) redirect('/login')
@@ -16,11 +18,11 @@ export default async function DashboardPage() {
     supabase.from('exams').select('id, title, content').order('title'),
     supabase
       .from('exam_attempts')
-      .select('id, exam_id, status, score, feedback')
+      .select('id, exam_id, status, score, feedback, is_graded')
       .eq('user_id', session.id),
   ])
 
-  const attemptByExam = new Map<string, Pick<ExamAttempt, 'id' | 'status' | 'score' | 'feedback'>>()
+  const attemptByExam = new Map<string, Pick<ExamAttempt, 'id' | 'status' | 'score' | 'feedback' | 'is_graded'>>()
   for (const a of attempts ?? []) {
     const existing = attemptByExam.get(a.exam_id)
     // Prefer completed over draft; keep most recent draft
@@ -53,7 +55,10 @@ export default async function DashboardPage() {
               const attempt = attemptByExam.get(exam.id)
               
               const content = exam.content as any
-              const questions = content.questions || content.sections?.flatMap((s: any) => s.components) || []
+              const questions = [
+                ...(content.questions || []),
+                ...(content.sections?.flatMap((s: any) => s.components) || [])
+              ]
               const hasWriting = questions.some((q: any) => {
                 const type = (q.type || '').toLowerCase()
                 const part = (q.part || '').toLowerCase()
@@ -63,28 +68,32 @@ export default async function DashboardPage() {
                        part.includes('writing') ||
                        !!q.rubric
               })
-              const isGraded = attempt?.feedback && 
-                               Object.keys(attempt.feedback).length > 0 && 
-                               !Object.values(attempt.feedback).some((f: any) => {
-                                 return f.isAI || 
-                                        f.comment === 'Không có câu trả lời.' || 
-                                        f.comment === 'An error occurred during auto-grading.' ||
-                                        f.comment === 'Đã xảy ra lỗi khi tự động chấm điểm.'
-                               })
+              const isGraded = !!attempt?.is_graded
+
+              if (exam.title === 'tét') {
+                console.log(`[Dashboard] Exam: ${exam.title}, hasWriting: ${hasWriting}, isGraded: ${isGraded}`)
+              }
               
               return (
                 <Card key={exam.id}>
                   <CardHeader>
                     <CardTitle className="text-base">{exam.title}</CardTitle>
                     {attempt?.status === 'completed' && (
-                      <CardDescription>
-                        {hasWriting && !isGraded ? (
+                      <CardDescription className="flex flex-col gap-1">
+                        <div>
+                          Score: <strong>{attempt.score.toString().replace(' points', '').replace(' Points', '')} points</strong>
+                        </div>
+                        {hasWriting && !isGraded && (
                           <span className="text-amber-600 font-semibold italic flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                             Pending teacher evaluation
                           </span>
-                        ) : (
-                          <>Score: <strong>{attempt.score.toString().replace(' points', '').replace(' Points', '')} points</strong></>
+                        )}
+                        {hasWriting && isGraded && (
+                          <span className="text-green-600 font-semibold italic flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            Evaluated by teacher
+                          </span>
                         )}
                       </CardDescription>
                     )}
