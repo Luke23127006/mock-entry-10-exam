@@ -54,7 +54,9 @@ export default function QuestionEditorCard({
             >
               <option value="single">Trắc nghiệm (1 đáp án)</option>
               <option value="multiple">Trắc nghiệm (nhiều đáp án)</option>
-              <option value="writing">Tự luận</option>
+              <option value="short_answer">Điền từ/Câu ngắn</option>
+              <option value="cloze">Cloze Test/Đọc hiểu (có Passage)</option>
+              <option value="writing">Tự luận/Đoạn văn</option>
             </select>
           </div>
           <div className="space-y-1">
@@ -109,6 +111,28 @@ export default function QuestionEditorCard({
                 />
               </div>
             ))}
+          </div>
+        )}
+
+        {(type === 'cloze' || type === 'short_answer') && (
+          <div className="space-y-3 pt-2 border-t">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-primary">Văn bản đọc hiểu / Passage (Tùy chọn)</Label>
+              <Textarea
+                {...reg(`${fieldPrefix}.passage`)}
+                placeholder="Nhập nội dung bài đọc..."
+                className="min-h-24 bg-muted/30"
+              />
+            </div>
+            {type === 'short_answer' && (
+              <div className="space-y-1">
+                <Label className="text-xs">Từ gốc (cho bài tập chia từ - tùy chọn)</Label>
+                <Input
+                  {...reg(`${fieldPrefix}.metadata.wordRoot`)}
+                  placeholder="Ví dụ: FRIEND"
+                />
+              </div>
+            )}
           </div>
         )}
 

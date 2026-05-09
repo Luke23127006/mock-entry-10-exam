@@ -3,12 +3,17 @@ export type UserRole = 'student' | 'teacher'
 export interface Question {
   id: string
   part: 'A' | 'B' | 'C' | 'D'
-  type: 'single' | 'multiple' | 'writing'
+  type: 'single' | 'multiple' | 'writing' | 'short_answer' | 'cloze'
   pointValue: number
   content: string
   options?: string[]
   correctAnswers?: string[]
   rubric?: string
+  passage?: string
+  metadata?: {
+    wordRoot?: string
+    layout?: 'grid' | 'list'
+  }
 }
 
 export interface ExamContent {

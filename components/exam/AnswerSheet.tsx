@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import ExamPartHeader from './ExamPartHeader'
-import SingleChoiceQuestion from './SingleChoiceQuestion'
-import MultipleChoiceQuestion from './MultipleChoiceQuestion'
+import ChoiceQuestion from './ChoiceQuestion'
+import InputQuestion from './InputQuestion'
+import PassageContainer from './PassageContainer'
 import WritingQuestion from './WritingQuestion'
 import ExamTimer from './ExamTimer'
 import type { Exam, ExamAttempt, Question } from '@/types/database'
@@ -154,45 +155,57 @@ export default function AnswerSheet({ attempt, exam }: Props) {
         {PARTS.map((part) => {
           const partQuestions = questions.filter((q: Question) => q.part === part)
           if (partQuestions.length === 0) return null
+          
+          let currentPassage: string | undefined = undefined
+
           return (
-            <section key={part} className="space-y-4">
+            <section key={part} className="space-y-6">
               <ExamPartHeader part={part} />
               {partQuestions.map((q: Question) => {
                 questionNumber++
                 const num = questionNumber
                 const answer = answers[q.id]
+                
+                const showPassage = q.passage && q.passage !== currentPassage
+                if (q.passage) currentPassage = q.passage
+
                 return (
-                  <Card key={q.id}>
-                    <CardContent className="pt-4">
-                      {q.type === 'single' && (
-                        <SingleChoiceQuestion
-                          question={q}
-                          questionNumber={num}
-                          answer={typeof answer === 'string' ? answer : ''}
-                          onChange={(v) => handleAnswerChange(q.id, v)}
-                          disabled={isPending}
-                        />
-                      )}
-                      {q.type === 'multiple' && (
-                        <MultipleChoiceQuestion
-                          question={q}
-                          questionNumber={num}
-                          answer={Array.isArray(answer) ? answer : []}
-                          onChange={(v) => handleAnswerChange(q.id, v)}
-                          disabled={isPending}
-                        />
-                      )}
-                      {q.type === 'writing' && (
-                        <WritingQuestion
-                          question={q}
-                          questionNumber={num}
-                          answer={typeof answer === 'string' ? answer : ''}
-                          onChange={(v) => handleAnswerChange(q.id, v)}
-                          disabled={isPending}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div key={q.id} className="space-y-4">
+                    {showPassage && q.passage && (
+                      <PassageContainer content={q.passage} />
+                    )}
+                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
+                      <CardContent className="p-6">
+                        {(q.type === 'single' || q.type === 'multiple') && (
+                          <ChoiceQuestion
+                            question={q}
+                            questionNumber={num}
+                            answer={answer ?? (q.type === 'multiple' ? [] : '')}
+                            onChange={(v) => handleAnswerChange(q.id, v)}
+                            disabled={isPending}
+                          />
+                        )}
+                        {(q.type === 'short_answer' || q.type === 'cloze') && (
+                          <InputQuestion
+                            question={q}
+                            questionNumber={num}
+                            answer={typeof answer === 'string' ? answer : ''}
+                            onChange={(v) => handleAnswerChange(q.id, v)}
+                            disabled={isPending}
+                          />
+                        )}
+                        {q.type === 'writing' && (
+                          <WritingQuestion
+                            question={q}
+                            questionNumber={num}
+                            answer={typeof answer === 'string' ? answer : ''}
+                            onChange={(v) => handleAnswerChange(q.id, v)}
+                            disabled={isPending}
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
                 )
               })}
             </section>
