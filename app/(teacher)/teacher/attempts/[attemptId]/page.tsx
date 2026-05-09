@@ -57,7 +57,7 @@ export default async function FeedbackPage({ params }: Props) {
   }
 
   const questionNumbers = new Map<string, number>()
-  allQuestions.forEach((q, idx) => {
+  questions.forEach((q: Question, idx: number) => {
     questionNumbers.set(q.id, idx + 1)
   })
 

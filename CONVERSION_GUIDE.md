@@ -33,6 +33,9 @@ Every exam must be split into logical sections (e.g., Phonetics, Vocabulary, Rea
 | `title` | The name of the section (e.g., "Part A: Phonetics") | Yes |
 | `instruction` | Guidance for the student (e.g., "Choose the word with different stress.") | No |
 | `readingPassage` | A long block of text used for multiple questions. | No |
+
+> [!TIP]
+> **Pro Tip for Instructions**: When creating instructions for writing or transformation sections, remind students to **notice the first capital letter** at the beginning of the sentence and the **full stop** at the end.
 | `wordBank` | An array of words for "Fill in the blank" type sections. | No |
 | `components` | An array of individual question objects. | Yes |
 
@@ -94,7 +97,7 @@ All question types support these optional fields:
 ```json
 {
   "title": "Part III: Reading",
-  "instruction": "Read the following passage and choose the best answer for each blank.",
+  "instruction": "Read the following passage and choose the best answer for each blank. Note: Pay attention to capitalization and punctuation!",
   "readingPassage": "London is the (21) _______ city in the UK. Many people (22) _______ it every year...",
   "components": [
     {
@@ -154,4 +157,4 @@ If building a script to automate this:
 1. **Regex for MCQ**: Look for patterns like `(A.)`, `(B.)` to split options.
 2. **Cloze Detection**: Search for numbers in parentheses `(21)`, `(22)` and replace with `[21]`, `[22]`.
 3. **Clean-up**: Strip out unnecessary Word formatting artifacts (like `\r\n` or double spaces).
-4. **Validation**: Ensure every `[id]` in a Cloze passage has a corresponding definition in the `blanks` array.
+5. **Grammar Reminders**: Ensure the `instruction` property for writing/reading sections explicitly reminds students to notice the first capital letter at the start of sentences and the full stop at the end.

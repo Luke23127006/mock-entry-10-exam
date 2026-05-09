@@ -82,7 +82,12 @@ export function QuestionMCQ({
             <Lightbulb className="h-3 w-3 mt-0.5 shrink-0" />
             <p>
               {correctAnswers && correctAnswers.length > 0 && (
-                <span className="font-bold mr-1">Answer: {correctAnswers.join(', ')}.</span>
+                <div className="font-bold mr-1">
+                  Answer: 
+                  {correctAnswers.map((ca, i) => (
+                    <div key={i} className="font-medium ml-4">• {ca}</div>
+                  ))}
+                </div>
               )}
               {explanation}
             </p>
@@ -159,9 +164,13 @@ export function QuestionMCQ({
             </div>
             <div className="space-y-3 text-blue-900/80 leading-relaxed">
               {correctAnswers && correctAnswers.length > 0 && (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-1">
                   <span className="font-bold text-blue-800 shrink-0">Correct Answer:</span>
-                  <span className="font-semibold text-blue-900">{correctAnswers.join(', ')}</span>
+                  <div className="font-semibold text-blue-900 space-y-1">
+                    {correctAnswers.map((ca, i) => (
+                      <div key={i}><FormattedText text={ca} /></div>
+                    ))}
+                  </div>
                 </div>
               )}
               {explanation ? (

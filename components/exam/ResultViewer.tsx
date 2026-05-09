@@ -268,10 +268,9 @@ export function ResultViewer({
                                   const oIdx = q.options?.indexOf(a)
                                   const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
                                   return (
-                                    <React.Fragment key={i}>
+                                    <div key={i}>
                                       {label}<FormattedText text={a} />
-                                      {i < ansArray.length - 1 ? ', ' : ''}
-                                    </React.Fragment>
+                                    </div>
                                   )
                                 })
                               })()}
@@ -284,10 +283,9 @@ export function ResultViewer({
                                 const oIdx = q.options?.indexOf(ca)
                                 const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
                                 return (
-                                  <span key={i}>
+                                  <div key={i}>
                                     {label}<FormattedText text={ca} />
-                                    {i < q.correctAnswers.length - 1 ? ', ' : ''}
-                                  </span>
+                                  </div>
                                 )
                               }) || '—'}
                             </div>

@@ -40,19 +40,25 @@ export function scoreExam(
   let hasWriting = false
 
   for (const q of questions) {
-    // Standardizing point value (default to 1 if missing)
     const pointValue = q.pointValue ?? 1
-
     maxAutoScore += pointValue
 
-    if (q.type === 'writing' || q.type === 'essay') {
+    const type = (q.type || '').toLowerCase()
+    const part = (q.part || '').toLowerCase()
+
+    const isWriting = type.includes('writing') || 
+                     type.includes('essay') || 
+                     part.includes('d') || 
+                     part.includes('writing') ||
+                     !!q.rubric
+
+    if (isWriting) {
       hasWriting = true
       continue
     }
-    const answer = answers[q.id]
 
-    // Single answer types (mcq, short_input, single, short_answer)
-    const isSingleType = ['mcq', 'short_input', 'single', 'short_answer'].includes(q.type)
+    const answer = answers[q.id]
+    const isSingleType = ['mcq', 'short_input', 'single', 'short_answer'].includes(type)
     const correctAnswers = q.correctAnswers || []
     
     const correct = isSingleType
