@@ -53,13 +53,14 @@ export async function submitWritingFeedback(
     .eq('id', attempt.exam_id)
     .single<Pick<Exam, 'content'>>()
 
-  const questions: Question[] = exam?.content?.questions ?? []
+  const content = exam?.content as any
+  const questions = content?.questions || content?.sections?.flatMap((s: any) => s.components) || []
   const { autoScore } = scoreExam(questions, attempt.answers)
   const finalScore = computeFinalScore(autoScore, feedback)
 
   await supabase
     .from('exam_attempts')
-    .update({ feedback, score: `${finalScore}/10` })
+    .update({ feedback, score: finalScore.toString() })
     .eq('id', attemptId)
 
   redirect('/teacher/attempts')

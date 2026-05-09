@@ -43,12 +43,12 @@ export function scoreExam(
     // Standardizing point value (default to 1 if missing)
     const pointValue = q.pointValue ?? 1
 
+    maxAutoScore += pointValue
+
     if (q.type === 'writing' || q.type === 'essay') {
       hasWriting = true
       continue
     }
-
-    maxAutoScore += pointValue
     const answer = answers[q.id]
 
     // Single answer types (mcq, short_input, single, short_answer)

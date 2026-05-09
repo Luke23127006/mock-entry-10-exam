@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button'
 import { FormattedText } from '@/components/exam/FormattedText'
 import { cn } from '@/lib/utils'
 import type { Exam, ExamAttempt, Question } from '@/types/database'
-import { CheckCircle2, XCircle, ListFilter, LayoutGrid } from 'lucide-react'
+import { CheckCircle2, XCircle, LayoutGrid, ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
+import { buttonVariants } from '@/components/ui/button'
 
 interface ResultViewerProps {
   exam: Exam
@@ -16,6 +18,7 @@ interface ResultViewerProps {
   autoScore: number
   maxAutoScore: number
   totalScore: number
+  hasWriting: boolean
 }
 
 export function ResultViewer({
@@ -24,7 +27,8 @@ export function ResultViewer({
   displaySections,
   autoScore,
   maxAutoScore,
-  totalScore
+  totalScore,
+  hasWriting
 }: ResultViewerProps) {
   const [filter, setFilter] = useState<'all' | 'correct' | 'wrong'>('all')
   const answers = attempt.answers
@@ -73,9 +77,20 @@ export function ResultViewer({
       {/* Score summary */}
       <Card className="border-primary/20 shadow-lg overflow-hidden">
         <div className="h-2 bg-primary" />
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary">Exam Results</CardTitle>
-          <p className="text-muted-foreground text-sm font-medium">{exam.title}</p>
+        <CardHeader className="pb-4">
+          <div className="flex justify-between items-start gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-primary">Exam Results</CardTitle>
+              <p className="text-muted-foreground text-sm font-medium">{exam.title}</p>
+            </div>
+            <Link 
+              href="/dashboard" 
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "rounded-full px-4 border-primary/20 hover:bg-primary/5 transition-all gap-1.5 shadow-sm")}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
@@ -83,11 +98,13 @@ export function ResultViewer({
               <p className="text-6xl font-black text-primary tracking-tight">
                 {totalScore}
               </p>
-              <p className="text-xl font-bold text-muted-foreground uppercase tracking-widest">Points</p>
+              <p className="text-xl font-bold text-muted-foreground uppercase tracking-widest">/ {maxAutoScore} points</p>
             </div>
-            <p className="text-sm font-semibold text-muted-foreground mt-2">
-              (Objective Scoring: {autoScore}/{maxAutoScore} points)
-            </p>
+            {hasWriting && (
+              <p className="text-xs font-semibold text-muted-foreground mt-2 italic">
+                (Includes objective score: {autoScore} points)
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2 pt-2 border-t">

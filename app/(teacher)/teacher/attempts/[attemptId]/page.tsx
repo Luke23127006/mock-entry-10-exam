@@ -29,26 +29,26 @@ export default async function FeedbackPage({ params }: Props) {
 
   if (!exam) redirect('/teacher/attempts')
 
-  const writingQuestions = exam.content.questions.filter((q: Question) => q.type === 'writing')
+  const content = exam.content as any
+  const allQuestions: Question[] = content.questions || content.sections?.flatMap((s: any) => s.components) || []
+  const writingQuestions = allQuestions.filter((q: Question) => q.type === 'writing' || q.type === 'essay')
   const existingFeedback = (attempt.feedback ?? {}) as Record<string, WritingFeedback>
 
   async function handleSubmit(formData: FormData) {
     'use server'
     const feedback: Record<string, WritingFeedback> = {}
     for (const q of writingQuestions) {
-      const score = parseFloat(formData.get(`feedback[${q.id}][score]`) as string) || 0
-      const comment = (formData.get(`feedback[${q.id}][comment]`) as string) ?? ''
-      feedback[q.id] = { score, comment }
-    }
-    await submitWritingFeedback(attemptId, feedback)
+    const score = parseFloat(formData.get(`feedback[${q.id}][score]`) as string) || 0
+    const comment = (formData.get(`feedback[${q.id}][comment]`) as string) ?? ''
+    feedback[q.id] = { score, comment, isAI: false }
+  }
+  await submitWritingFeedback(attemptId, feedback)
   }
 
-  let questionNumber = 0
-  const allQuestions = exam.content.questions
   const questionNumbers = new Map<string, number>()
-  for (const q of allQuestions) {
-    questionNumbers.set(q.id, ++questionNumber)
-  }
+  allQuestions.forEach((q, idx) => {
+    questionNumbers.set(q.id, idx + 1)
+  })
 
   return (
     <main className="min-h-screen bg-muted/30 py-10 px-4">

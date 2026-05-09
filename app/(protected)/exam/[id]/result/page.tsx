@@ -34,7 +34,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const questions: Question[] = exam.content.questions || sections.flatMap((s: any) => s.components) || []
   
   const answers = attempt.answers
-  const { autoScore, maxAutoScore } = scoreExam(questions, answers)
+  const { autoScore, maxAutoScore, hasWriting } = scoreExam(questions, answers)
   const totalScore = computeFinalScore(autoScore, attempt.feedback)
 
   const parts = ['A', 'B', 'C', 'D'] as const
@@ -55,13 +55,9 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
           autoScore={autoScore}
           maxAutoScore={maxAutoScore}
           totalScore={totalScore}
+          hasWriting={hasWriting}
         />
 
-        <div className="flex justify-center pt-4 pb-10">
-          <Link href="/dashboard" className={buttonVariants({ variant: 'outline' })}>
-            ← Back to Dashboard
-          </Link>
-        </div>
       </div>
     </main>
   )

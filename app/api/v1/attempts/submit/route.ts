@@ -51,13 +51,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 })
     }
 
-    const questions: Question[] = exam.content.questions ?? []
+    const content = exam?.content as any
+    const questions = content?.questions || content?.sections?.flatMap((s: any) => s.components) || []
 
     // 2. Score MCQ questions
     const { autoScore, maxAutoScore } = scoreExam(questions, answers)
 
     // 3. Grade writing questions via Gemini API
-    const writingQuestions = questions.filter((q) => q.type === 'writing')
+    const writingQuestions = questions.filter((q: Question) => q.type === 'writing' || q.type === 'essay')
     const feedback: Record<string, WritingFeedback> = {}
 
     // Initialize Gemini model
@@ -85,21 +86,18 @@ export async function POST(req: NextRequest) {
         feedback[wq.id] = {
           score: typeof parsed.score === 'number' ? parsed.score : 0,
           comment: typeof parsed.feedback === 'string' ? parsed.feedback : 'Error generating feedback.',
+          isAI: true,
         }
       } catch (err) {
         console.error(`Gemini grading failed for question ${wq.id}:`, err)
-        feedback[wq.id] = { score: 0, comment: 'Đã xảy ra lỗi khi tự động chấm điểm.' }
+        feedback[wq.id] = { score: 0, comment: 'An error occurred during auto-grading.' }
       }
     }
 
     // 4. Calculate total score & save
     const finalScore = computeFinalScore(autoScore, feedback)
 
-    // We create a combined score text to display the final score
-    // Since autoScore might be out of maxAutoScore, and Gemini gives a score out of 10 for each writing part,
-    // computeFinalScore essentially just sums them up.
-    // We'll store it as a total points string.
-    const scoreText = `${finalScore} points`
+    const scoreText = finalScore.toString()
 
     const { error } = await supabase
       .from('exam_attempts')

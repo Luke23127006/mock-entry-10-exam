@@ -3,7 +3,7 @@ export type UserRole = 'student' | 'teacher'
 export interface Question {
   id: string
   part: 'A' | 'B' | 'C' | 'D'
-  type: 'single' | 'multiple' | 'writing' | 'short_answer' | 'cloze'
+  type: 'single' | 'multiple' | 'writing' | 'short_answer' | 'cloze' | 'mcq' | 'short_input' | 'essay'
   pointValue: number
   content: string
   options?: string[]
@@ -37,6 +37,7 @@ export interface Exam {
 export interface WritingFeedback {
   score: number
   comment: string
+  isAI?: boolean
 }
 
 export interface ExamAttempt {
