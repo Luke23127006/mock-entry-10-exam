@@ -8,7 +8,7 @@ import { buttonVariants } from '@/components/ui/button'
 import type { Exam, ExamAttempt, Question } from '@/types/database'
 
 interface Props {
-  params: Promise<{ attemptId: string }>
+  params: Promise<{ id: string }>
 }
 
 const PART_LABELS: Record<string, string> = {
@@ -19,7 +19,7 @@ const PART_LABELS: Record<string, string> = {
 }
 
 export default async function ResultPage({ params }: Props) {
-  const { attemptId } = await params
+  const { id: attemptId } = await params
   const session = await getSession()
   if (!session) redirect('/login')
 
@@ -59,16 +59,11 @@ export default async function ResultPage({ params }: Props) {
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="text-3xl font-bold">
-              {autoScore}
-              <span className="text-base font-normal text-muted-foreground">
-                /{maxAutoScore} điểm (trắc nghiệm)
-              </span>
+              {attempt.score || autoScore}
             </p>
-            {hasWriting && (
-              <p className="text-sm text-amber-600 font-medium">
-                ⏳ Phần tự luận đang chờ giáo viên chấm điểm.
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground">
+              (Trắc nghiệm: {autoScore}/{maxAutoScore} điểm)
+            </p>
           </CardContent>
         </Card>
 
@@ -111,10 +106,18 @@ export default async function ResultPage({ params }: Props) {
                           <p className="text-sm bg-muted/50 rounded p-2 whitespace-pre-wrap min-h-8">
                             {typeof answer === 'string' && answer ? answer : <em className="text-muted-foreground">Chưa trả lời</em>}
                           </p>
-                          {q.rubric && (
-                            <p className="text-xs text-muted-foreground italic">Gợi ý: {q.rubric}</p>
+                          {attempt.feedback && attempt.feedback[q.id] ? (
+                            <div className="mt-3 bg-blue-50/50 p-3 rounded border border-blue-100">
+                              <p className="text-sm font-semibold text-blue-900 mb-1">
+                                Điểm: {attempt.feedback[q.id].score}/10
+                              </p>
+                              <p className="text-sm text-blue-800 whitespace-pre-wrap">
+                                Nhận xét: {attempt.feedback[q.id].comment}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-amber-600 mt-2">⏳ Chưa có nhận xét</p>
                           )}
-                          <p className="text-xs text-amber-600">⏳ Chờ giáo viên chấm</p>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-1 text-sm">

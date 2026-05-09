@@ -31,6 +31,7 @@ export default function QuestionEditorCard({
   const type: string = useWatch({ control: c, name: `${fieldPrefix}.type` }) ?? 'single'
   const options: string[] = useWatch({ control: c, name: `${fieldPrefix}.options` }) ?? ['', '', '', '']
   const correctAnswer: string = useWatch({ control: c, name: `${fieldPrefix}.correctAnswer` }) ?? ''
+  const correctAnswers: string[] = useWatch({ control: c, name: `${fieldPrefix}.correctAnswers` }) ?? []
 
   return (
     <Card>
@@ -51,7 +52,8 @@ export default function QuestionEditorCard({
               {...reg(`${fieldPrefix}.type`)}
               className="w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring"
             >
-              <option value="single">Trắc nghiệm</option>
+              <option value="single">Trắc nghiệm (1 đáp án)</option>
+              <option value="multiple">Trắc nghiệm (nhiều đáp án)</option>
               <option value="writing">Tự luận</option>
             </select>
           </div>
@@ -76,19 +78,30 @@ export default function QuestionEditorCard({
           />
         </div>
 
-        {type === 'single' && (
+        {(type === 'single' || type === 'multiple') && (
           <div className="space-y-2">
-            <Label className="text-xs">Lựa chọn — chọn radio để đánh dấu đáp án đúng</Label>
+            <Label className="text-xs">
+              Lựa chọn — đánh dấu vào {type === 'single' ? 'radio' : 'ô checkbox'} để chọn đáp án đúng
+            </Label>
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  {...reg(`${fieldPrefix}.correctAnswer`)}
-                  value={options[i] ?? ''}
-                  checked={correctAnswer === (options[i] ?? '')}
-                  onChange={() => {}}
-                  className="size-4 accent-primary shrink-0"
-                />
+                {type === 'single' ? (
+                  <input
+                    type="radio"
+                    {...reg(`${fieldPrefix}.correctAnswer`)}
+                    value={i}
+                    checked={String(correctAnswer) === String(i)}
+                    className="size-4 accent-primary shrink-0"
+                  />
+                ) : (
+                  <input
+                    type="checkbox"
+                    {...reg(`${fieldPrefix}.correctAnswers`)}
+                    value={i}
+                    checked={correctAnswers.includes(String(i))}
+                    className="size-4 accent-primary shrink-0"
+                  />
+                )}
                 <Input
                   {...reg(`${fieldPrefix}.options.${i}`)}
                   placeholder={`Lựa chọn ${String.fromCharCode(65 + i)}`}

@@ -20,6 +20,7 @@ const DEFAULT_QUESTION = {
   pointValue: 0.2,
   options: ['', '', '', ''],
   correctAnswer: '',
+  correctAnswers: [] as string[],
   rubric: '',
 }
 

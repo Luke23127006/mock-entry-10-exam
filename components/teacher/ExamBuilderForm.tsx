@@ -10,11 +10,12 @@ import PartSection from './PartSection'
 export type PartKey = 'A' | 'B' | 'C' | 'D'
 
 interface QuestionDraft {
-  type: 'single' | 'writing'
+  type: 'single' | 'multiple' | 'writing'
   content: string
   pointValue: number
   options: string[]
-  correctAnswer: string
+  correctAnswer: string // stores index as string for single
+  correctAnswers: string[] // stores indices as strings for multiple
   rubric: string
 }
 
@@ -43,8 +44,13 @@ export default function ExamBuilderForm() {
         type: q.type,
         pointValue: q.pointValue ?? 0,
         content: q.content,
-        options: q.type === 'single' ? q.options.filter(Boolean) : undefined,
-        correctAnswers: q.type === 'single' && q.correctAnswer ? [q.correctAnswer] : undefined,
+        options: q.type !== 'writing' ? q.options.filter(Boolean) : undefined,
+        correctAnswers:
+          q.type === 'single'
+            ? [q.options[Number(q.correctAnswer)]].filter(Boolean)
+            : q.type === 'multiple'
+            ? q.correctAnswers.map((idx) => q.options[Number(idx)]).filter(Boolean)
+            : undefined,
         rubric: q.rubric || undefined,
       }))
     })
