@@ -32,9 +32,25 @@ export function ResultViewer({
 }: ResultViewerProps) {
   const [filter, setFilter] = useState<'all' | 'correct' | 'wrong'>('all')
   const answers = attempt.answers
+  let feedback = attempt.feedback as any
+  if (typeof feedback === 'string' && feedback.trim() !== '') {
+    try {
+      feedback = JSON.parse(feedback)
+    } catch (e) {
+      console.error('Failed to parse feedback:', e)
+      feedback = {}
+    }
+  }
 
   const checkIsCorrect = (q: any) => {
-    const isWriting = q.type === 'writing' || q.type === 'essay'
+    const type = (q.type || '').toLowerCase()
+    const part = (q.part || '').toLowerCase()
+    const isWriting = type.includes('writing') || 
+                      type.includes('essay') || 
+                      part.includes('d') || 
+                      part.includes('writing') ||
+                      !!q.rubric
+
     if (isWriting) return true // Writing is neutral for filter or we can treat as pending
     
     const answer = answers[q.id]
@@ -158,7 +174,13 @@ export function ResultViewer({
             <div className="space-y-4">
               {section.components.map((q: any) => {
                 const answer = answers[q.id]
-                const isWriting = q.type === 'writing' || q.type === 'essay'
+                const type = (q.type || '').toLowerCase()
+                const part = (q.part || '').toLowerCase()
+                const isWriting = type.includes('writing') || 
+                                  type.includes('essay') || 
+                                  part.includes('d') || 
+                                  part.includes('writing') ||
+                                  !!q.rubric
                 const isCorrect = q.isCorrectResult
 
                 return (
@@ -194,22 +216,43 @@ export function ResultViewer({
                           <div className="text-sm bg-background border rounded-xl p-4 whitespace-pre-wrap min-h-[4rem] shadow-sm">
                             {typeof answer === 'string' && answer ? answer : <em className="text-muted-foreground font-normal">No answer submitted</em>}
                           </div>
-                          {attempt.feedback && attempt.feedback[q.id] ? (
-                            <div className="mt-4 bg-blue-50/50 p-4 rounded-xl border border-blue-200">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Evaluated</div>
-                                <p className="text-sm font-bold text-blue-900">
-                                  Score: {attempt.feedback[q.id].score}/10
-                                </p>
+                          {feedback && feedback[q.id] ? (
+                            <div className={cn(
+                              "mt-4 p-5 rounded-2xl border shadow-sm",
+                              feedback[q.id].isAI 
+                                ? "bg-amber-50/50 border-amber-200" 
+                                : "bg-green-50/50 border-green-200"
+                            )}>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={cn(
+                                    "text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest",
+                                    feedback[q.id].isAI 
+                                      ? "bg-amber-100 text-amber-700" 
+                                      : "bg-green-600 text-white"
+                                  )}>
+                                    {feedback[q.id].isAI ? 'AI Evaluation' : 'Teacher Feedback'}
+                                  </div>
+                                  <p className={cn(
+                                    "text-sm font-black",
+                                    feedback[q.id].isAI ? "text-amber-900" : "text-green-900"
+                                  )}>
+                                    Score: {feedback[q.id].score} / {q.pointValue || 1}
+                                  </p>
+                                </div>
+                                {!feedback[q.id].isAI && <CheckCircle2 className="h-4 w-4 text-green-600" />}
                               </div>
-                              <p className="text-sm text-blue-800/80 leading-relaxed italic">
-                                "{attempt.feedback[q.id].comment}"
+                              <p className={cn(
+                                "text-sm leading-relaxed",
+                                feedback[q.id].isAI ? "text-amber-800/80 italic" : "text-green-800"
+                              )}>
+                                {feedback[q.id].comment}
                               </p>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 mt-2 text-amber-600">
-                              <span className="animate-pulse">⏳</span>
-                              <p className="text-xs font-bold uppercase tracking-tight">Pending teacher evaluation</p>
+                            <div className="flex items-center gap-2 mt-2 py-4 px-6 rounded-2xl bg-amber-50/30 border border-amber-100/50 text-amber-600">
+                              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                              <p className="text-xs font-black uppercase tracking-[0.1em]">Awaiting teacher grading</p>
                             </div>
                           )}
                         </div>

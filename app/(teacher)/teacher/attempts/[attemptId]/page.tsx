@@ -30,8 +30,19 @@ export default async function FeedbackPage({ params }: Props) {
   if (!exam) redirect('/teacher/attempts')
 
   const content = exam.content as any
-  const allQuestions: Question[] = content.questions || content.sections?.flatMap((s: any) => s.components) || []
-  const writingQuestions = allQuestions.filter((q: Question) => q.type === 'writing' || q.type === 'essay')
+  const questions = [
+    ...(content.questions || []),
+    ...(content.sections?.flatMap((s: any) => s.components) || [])
+  ]
+  const writingQuestions = questions.filter((q: Question) => {
+    const type = (q.type || '').toLowerCase()
+    const part = (q.part || '').toLowerCase()
+    return type.includes('writing') || 
+           type.includes('essay') || 
+           part.includes('d') || 
+           part.includes('writing') ||
+           !!q.rubric
+  })
   const existingFeedback = (attempt.feedback ?? {}) as Record<string, WritingFeedback>
 
   async function handleSubmit(formData: FormData) {

@@ -71,10 +71,20 @@ export function scoreExam(
 
 export function computeFinalScore(
   autoScore: number,
-  feedback: Record<string, WritingFeedback> | null,
+  feedback: any,
 ): number {
-  const teacherScore = feedback
-    ? Object.values(feedback).reduce((sum, f) => sum + (f.score ?? 0), 0)
+  let feedbackObj = feedback
+  if (typeof feedback === 'string' && feedback.trim() !== '') {
+    try {
+      feedbackObj = JSON.parse(feedback)
+    } catch (e) {
+      console.error('Failed to parse feedback JSON:', e)
+      feedbackObj = {}
+    }
+  }
+  
+  const teacherScore = feedbackObj
+    ? Object.values(feedbackObj).reduce((sum: number, f: any) => sum + (f.score ?? 0), 0)
     : 0
   return Math.round((autoScore + teacherScore) * 100) / 100
 }
