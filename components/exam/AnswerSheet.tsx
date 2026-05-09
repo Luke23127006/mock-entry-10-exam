@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Save } from 'lucide-react'
-import { submitExam } from '@/app/actions/exam'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import ExamPartHeader from './ExamPartHeader'
@@ -36,8 +36,10 @@ export default function AnswerSheet({ attempt, exam }: Props) {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>(
     attempt.answers ?? {},
   )
-  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const isPending = isSubmitting // alias for existing logic
 
   // Track whether answers have changed since the last save
   const lastSavedRef = useRef<Record<string, string | string[]>>(attempt.answers ?? {})
@@ -85,14 +87,36 @@ export default function AnswerSheet({ attempt, exam }: Props) {
   )
 
   // ── Submit ─────────────────────────────────────────────────────────────────
+  const submitToApi = async () => {
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/attempts/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attemptId: attempt.id, answers: answersRef.current }),
+      })
+      const data = await res.json()
+      if (res.ok && data.redirect) {
+        router.push(data.redirect)
+      } else {
+        toast.error('Nộp bài thất bại', { description: data.error || 'Vui lòng thử lại.' })
+        setIsSubmitting(false)
+      }
+    } catch (err) {
+      toast.error('Lỗi kết nối', { description: 'Vui lòng kiểm tra mạng và thử lại.' })
+      setIsSubmitting(false)
+    }
+  }
+
   const handleSubmit = useCallback(() => {
     if (!window.confirm('Bạn có chắc chắn muốn nộp bài? Sau khi nộp sẽ không thể chỉnh sửa.'))
       return
-    startTransition(() => submitExam(attempt.id, answersRef.current))
+    submitToApi()
   }, [attempt.id])
 
   const handleExpire = useCallback(() => {
-    startTransition(() => submitExam(attempt.id, answersRef.current))
+    toast.info('Hết giờ làm bài', { description: 'Hệ thống đang tự động nộp bài...' })
+    submitToApi()
   }, [attempt.id])
 
   const questions = exam.content.questions
