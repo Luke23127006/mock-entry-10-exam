@@ -132,6 +132,7 @@ export default function ExamViewerWrapper({ exam, attempt }: Props) {
         initialAnswers={(attempt.answers as Record<string, any>) || {}}
         onSubmit={handleSubmit} 
         onExit={handleExit}
+        isReviewMode={attempt.status === 'completed'}
       />
     </div>
   )

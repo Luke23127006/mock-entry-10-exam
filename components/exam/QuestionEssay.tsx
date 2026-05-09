@@ -4,6 +4,8 @@ import * as React from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
+import { Lightbulb } from 'lucide-react'
+
 interface QuestionEssayProps {
   id: string
   promptText: string
@@ -12,6 +14,9 @@ interface QuestionEssayProps {
   value?: string
   onChange?: (value: string) => void
   questionNumber?: number
+  isReviewMode?: boolean
+  explanation?: string
+  rubric?: string
 }
 
 export function QuestionEssay({
@@ -21,7 +26,10 @@ export function QuestionEssay({
   maxWords,
   value = '',
   onChange,
-  questionNumber
+  questionNumber,
+  isReviewMode,
+  explanation,
+  rubric
 }: QuestionEssayProps) {
   const wordCount = React.useMemo(() => {
     const trimmed = value.trim()
@@ -49,10 +57,12 @@ export function QuestionEssay({
           id={id}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          disabled={isReviewMode}
           placeholder="Start writing your essay here..."
           className={cn(
             "min-h-[300px] text-[1.05rem] leading-loose font-serif rounded-2xl p-6 focus-visible:ring-primary/20 transition-all border-border/50 shadow-sm resize-y",
-            isOverLimit ? "border-destructive focus-visible:ring-destructive/20 shadow-[0_0_15px_rgba(239,68,68,0.05)]" : "focus-visible:border-primary shadow-[0_0_15px_rgba(var(--primary),0.02)]"
+            isOverLimit ? "border-destructive focus-visible:ring-destructive/20 shadow-[0_0_15px_rgba(239,68,68,0.05)]" : "focus-visible:border-primary shadow-[0_0_15px_rgba(var(--primary),0.02)]",
+            isReviewMode && "bg-muted/50 cursor-not-allowed"
           )}
         />
         
@@ -69,13 +79,37 @@ export function QuestionEssay({
             </span>
           </div>
 
-          {minWords && wordCount < minWords && wordCount > 0 && (
+          {minWords && wordCount < minWords && wordCount > 0 && !isReviewMode && (
             <p className="text-[11px] text-muted-foreground font-medium italic animate-pulse">
               Min. {minWords} words required
             </p>
           )}
         </div>
       </div>
+
+      {isReviewMode && (
+        <div className="mt-6 pl-0 sm:pl-11 animate-in zoom-in-95 duration-300">
+          <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-5 text-sm">
+            <div className="flex items-center gap-2 mb-3 font-bold text-blue-700">
+              <Lightbulb className="h-4 w-4" />
+              <span className="uppercase tracking-wider text-xs">Grading Guide / Rubric</span>
+            </div>
+            <div className="space-y-3 text-blue-900/80 leading-relaxed">
+              {rubric && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-blue-800 shrink-0">Rubric:</span>
+                  <span className="font-semibold text-blue-900">{rubric}</span>
+                </div>
+              )}
+              {explanation ? (
+                <p className="italic">{explanation}</p>
+              ) : (
+                <p className="text-blue-600/60 italic">No additional explanation provided.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

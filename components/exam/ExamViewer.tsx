@@ -9,18 +9,21 @@ import { WordBank } from './WordBank'
 import { QuestionRenderer } from './QuestionRenderer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface ExamViewerProps {
   exam: ExamDefinition
   initialAnswers?: Record<string, any>
   onSubmit?: (answers: Record<string, any>) => void
   onExit?: (answers: Record<string, any>) => void
+  isReviewMode?: boolean
 }
 
-export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit }: ExamViewerProps) {
+export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit, isReviewMode = false }: ExamViewerProps) {
   const [answers, setAnswers] = React.useState<Record<string, any>>(initialAnswers)
   
   const handleAnswerChange = (questionId: string, value: any) => {
+    if (isReviewMode) return
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value
@@ -62,7 +65,10 @@ export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit }: Exam
                 return (
                   <Card 
                     key={question.id} 
-                    className="border-none shadow-[0_2px_15px_rgba(0,0,0,0.03)] ring-1 ring-border/50 overflow-visible hover:ring-primary/20 transition-all duration-300"
+                    className={cn(
+                      "border-none shadow-[0_2px_15px_rgba(0,0,0,0.03)] ring-1 ring-border/50 overflow-visible transition-all duration-300",
+                      !isReviewMode && "hover:ring-primary/20"
+                    )}
                   >
                     <CardContent className="p-6 sm:p-10">
                       <QuestionRenderer
@@ -70,6 +76,7 @@ export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit }: Exam
                         value={answers[question.id]}
                         onChange={(val) => handleAnswerChange(question.id, val)}
                         questionNumber={globalQuestionCounter}
+                        isReviewMode={isReviewMode}
                       />
                     </CardContent>
                   </Card>
@@ -81,31 +88,33 @@ export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit }: Exam
       </main>
 
       {/* Sticky Bottom Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-md py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
-          <div className="hidden sm:flex flex-col">
-            <span className="text-xs uppercase tracking-widest font-black text-muted-foreground/60">Progress</span>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-mono font-bold text-primary">
-                {Object.keys(answers).length}
-              </span>
-              <span className="text-sm text-muted-foreground font-medium">questions recorded</span>
+      {!isReviewMode && (
+        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-md py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+          <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
+            <div className="hidden sm:flex flex-col">
+              <span className="text-xs uppercase tracking-widest font-black text-muted-foreground/60">Progress</span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-mono font-bold text-primary">
+                  {Object.keys(answers).length}
+                </span>
+                <span className="text-sm text-muted-foreground font-medium">questions recorded</span>
+              </div>
             </div>
+            
+            <Button 
+              size="lg" 
+              className="w-full sm:w-auto px-10 h-12 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl"
+              onClick={() => {
+                if (window.confirm("Are you sure you want to submit your exam? This action cannot be undone.")) {
+                  onSubmit?.(answers)
+                }
+              }}
+            >
+              Submit Exam
+            </Button>
           </div>
-          
-          <Button 
-            size="lg" 
-            className="w-full sm:w-auto px-10 h-12 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl"
-            onClick={() => {
-              if (window.confirm("Are you sure you want to submit your exam? This action cannot be undone.")) {
-                onSubmit?.(answers)
-              }
-            }}
-          >
-            Submit Exam
-          </Button>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   )
 }

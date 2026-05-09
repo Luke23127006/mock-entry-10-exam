@@ -4,11 +4,17 @@ import { supabase } from '@/lib/supabase'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { title, content } = body
+    let { title, content } = body
+
+    // Support the new modular format from CONVERSION_GUIDE.md
+    // If 'sections' is at the top level, we wrap it into the 'content' JSONB field
+    if (!content && body.sections) {
+      content = { sections: body.sections }
+    }
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: 'Missing required fields: title and content are required' },
+        { error: 'Missing required fields: title and content (or sections) are required' },
         { status: 400 }
       )
     }
