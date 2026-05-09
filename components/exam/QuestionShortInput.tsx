@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 import { Lightbulb } from 'lucide-react'
+import { FormattedText } from './FormattedText'
 
 interface QuestionShortInputProps {
   id: string
@@ -40,7 +41,7 @@ export function QuestionShortInput({
           </span>
         )}
         <div className="font-semibold text-lg text-foreground leading-snug pt-1">
-          {content}
+          <FormattedText text={content} />
         </div>
       </div>
 
@@ -48,7 +49,7 @@ export function QuestionShortInput({
         <div className="flex items-center gap-3 w-full">
           {prefix && (
             <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest shrink-0 bg-muted/50 px-3 py-2 rounded-lg border border-border/50 shadow-sm">
-              {prefix}
+              <FormattedText text={prefix} />
             </span>
           )}
           <Input

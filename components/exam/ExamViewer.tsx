@@ -8,7 +8,8 @@ import { ReadingPassage } from './ReadingPassage'
 import { WordBank } from './WordBank'
 import { QuestionRenderer } from './QuestionRenderer'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormattedText } from './FormattedText'
 import { cn } from '@/lib/utils'
 
 interface ExamViewerProps {
@@ -45,11 +46,17 @@ export function ExamViewer({ exam, initialAnswers = {}, onSubmit, onExit, isRevi
           <SectionBlock
             key={`${section.title}-${sectionIndex}`}
             title={section.title}
-            instruction={section.instruction}
           >
             {section.readingPassage && (
-              <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-                <ReadingPassage content={section.readingPassage} />
+              <div className="mb-10 p-6 sm:p-10 rounded-3xl bg-muted/30 border border-border/50 shadow-inner text-base leading-relaxed text-foreground/90 whitespace-pre-wrap relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-primary/20" />
+                <FormattedText text={section.readingPassage} />
+              </div>
+            )}
+            
+            {section.instruction && (
+              <div className="mb-8 p-4 rounded-xl bg-muted/50 border border-border/50 text-sm font-medium text-muted-foreground italic">
+                <FormattedText text={section.instruction} />
               </div>
             )}
             

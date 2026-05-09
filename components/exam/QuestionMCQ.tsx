@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { Lightbulb } from 'lucide-react'
+import { FormattedText } from './FormattedText'
 
 interface QuestionMCQProps {
   id: string
@@ -17,6 +18,7 @@ interface QuestionMCQProps {
   explanation?: string
   correctAnswers?: string[]
   variant?: 'default' | 'compact'
+  layout?: '4x1' | '2x2' | '1x4'
 }
 
 export function QuestionMCQ({
@@ -29,14 +31,17 @@ export function QuestionMCQ({
   isReviewMode,
   explanation,
   correctAnswers,
-  variant = 'default'
+  variant = 'default',
+  layout
 }: QuestionMCQProps) {
   if (variant === 'compact') {
+    const gridCols = layout === '2x2' ? 'grid-cols-2' : layout === '4x1' ? 'grid-cols-1' : 'grid-cols-4'
+
     return (
       <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-400">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-2">
           {questionNumber && (
-            <span className="font-bold text-primary text-base shrink-0">
+            <span className="font-bold text-primary text-base shrink-0 min-w-[2.5rem]">
               {questionNumber}.
             </span>
           )}
@@ -44,7 +49,7 @@ export function QuestionMCQ({
             value={value}
             onValueChange={onChange}
             disabled={isReviewMode}
-            className="flex flex-wrap gap-x-6 gap-y-2"
+            className={cn("grid gap-x-8 gap-y-2 flex-1", gridCols)}
           >
             {options.map((option, index) => {
               const optionId = `${id}-opt-${index}`
@@ -58,14 +63,14 @@ export function QuestionMCQ({
                   <Label
                     htmlFor={optionId}
                     className={cn(
-                      "flex items-center gap-1.5 cursor-pointer font-medium text-sm transition-colors",
+                      "flex items-center gap-1.5 cursor-pointer font-medium text-sm transition-colors whitespace-nowrap",
                       isReviewMode && isCorrect && "text-green-600 font-bold",
                       isReviewMode && isSelected && !isCorrect && "text-destructive font-bold",
                       !isReviewMode && "hover:text-primary"
                     )}
                   >
                     <span className="opacity-60">{label}.</span>
-                    <span>{option}</span>
+                    <FormattedText text={option} />
                   </Label>
                 </div>
               )
@@ -73,7 +78,7 @@ export function QuestionMCQ({
           </RadioGroup>
         </div>
         {isReviewMode && (explanation || (correctAnswers && correctAnswers.length > 0)) && (
-          <div className="pl-6 text-[11px] text-blue-700/70 italic flex items-start gap-1.5">
+          <div className="pl-10 text-[11px] text-blue-700/70 italic flex items-start gap-1.5">
             <Lightbulb className="h-3 w-3 mt-0.5 shrink-0" />
             <p>
               {correctAnswers && correctAnswers.length > 0 && (
@@ -87,6 +92,8 @@ export function QuestionMCQ({
     )
   }
 
+  const gridCols = layout === '1x4' ? 'grid-cols-4' : layout === '2x2' ? 'grid-cols-2' : 'grid-cols-1'
+
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex gap-3">
@@ -96,7 +103,7 @@ export function QuestionMCQ({
           </span>
         )}
         <div className="font-semibold text-lg text-foreground leading-snug pt-1">
-          {content}
+          <FormattedText text={content} />
         </div>
       </div>
 
@@ -104,7 +111,7 @@ export function QuestionMCQ({
         value={value}
         onValueChange={onChange}
         disabled={isReviewMode}
-        className="grid gap-3 pl-0 sm:pl-11"
+        className={cn("grid gap-3 pl-0 sm:pl-11", gridCols)}
       >
         {options.map((option, index) => {
           const optionId = `${id}-opt-${index}`
@@ -136,7 +143,7 @@ export function QuestionMCQ({
                   isReviewMode && isSelected && !isCorrect && "text-destructive"
                 )}
               >
-                {option}
+                <FormattedText text={option} />
               </Label>
             </div>
           )

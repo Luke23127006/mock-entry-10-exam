@@ -32,28 +32,34 @@ function isMultipleCorrect(
 }
 
 export function scoreExam(
-  questions: Question[],
-  answers: Record<string, string | string[]>,
+  questions: any[],
+  answers: Record<string, any>,
 ): ScoreResult {
   let autoScore = 0
   let maxAutoScore = 0
   let hasWriting = false
 
   for (const q of questions) {
-    if (q.type === 'writing') {
+    // Standardizing point value (default to 1 if missing)
+    const pointValue = q.pointValue ?? 1
+
+    if (q.type === 'writing' || q.type === 'essay') {
       hasWriting = true
       continue
     }
 
-    maxAutoScore += q.pointValue
-
+    maxAutoScore += pointValue
     const answer = answers[q.id]
-    const correct =
-      q.type === 'single'
-        ? isSingleCorrect(answer, q.correctAnswers ?? [])
-        : isMultipleCorrect(answer, q.correctAnswers ?? [])
 
-    if (correct) autoScore += q.pointValue
+    // Single answer types (mcq, short_input, single, short_answer)
+    const isSingleType = ['mcq', 'short_input', 'single', 'short_answer'].includes(q.type)
+    const correctAnswers = q.correctAnswers || []
+    
+    const correct = isSingleType
+      ? isSingleCorrect(answer, correctAnswers)
+      : isMultipleCorrect(answer, correctAnswers)
+
+    if (correct) autoScore += pointValue
   }
 
   return {

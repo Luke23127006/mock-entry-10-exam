@@ -6,6 +6,7 @@ import { scoreExam } from '@/lib/scoring'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import type { Exam, ExamAttempt, Question } from '@/types/database'
+import { cn } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -41,7 +42,10 @@ export default async function ResultPage({ params }: Props) {
 
   if (!exam) redirect('/dashboard')
 
-  const questions = exam.content.questions
+  // Handle modular structure if content has sections
+  const sections = (exam.content as any).sections || []
+  const questions: Question[] = exam.content.questions || sections.flatMap((s: any) => s.components) || []
+  
   const answers = attempt.answers
   const { autoScore, maxAutoScore, hasWriting } = scoreExam(questions, answers)
 
@@ -68,78 +72,92 @@ export default async function ResultPage({ params }: Props) {
         </Card>
 
         {/* Per-part breakdown */}
-        {parts.map((part) => {
-          const partQs = questions.filter((q: Question) => q.part === part)
-          if (partQs.length === 0) return null
+        {/* Per-section/part breakdown */}
+        {(sections.length > 0 ? sections : parts.map(p => ({
+          title: PART_LABELS[p] || `Part ${p}`,
+          components: questions.filter((q: Question) => q.part === p)
+        }))).map((section: any, sIdx: number) => {
+          const sectionQs = section.components || []
+          if (sectionQs.length === 0) return null
+          
           return (
-            <section key={part} className="space-y-3">
-              <h2 className="font-semibold text-sm">{PART_LABELS[part]}</h2>
-              {partQs.map((q: Question, idx: number) => {
+            <section key={sIdx} className="space-y-3">
+              <h2 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{section.title}</h2>
+              {sectionQs.map((q: any, idx: number) => {
                 const answer = answers[q.id]
-                const isWriting = q.type === 'writing'
-
+                const isWriting = q.type === 'writing' || q.type === 'essay'
                 let isCorrect = false
-                if (!isWriting && q.correctAnswers?.length) {
+                const correctAnswers = q.correctAnswers || []
+
+                if (!isWriting) {
                   const norm = (s: string) => s.trim().toLowerCase()
-                  if (q.type === 'single' && typeof answer === 'string') {
-                    isCorrect = norm(answer) === norm(q.correctAnswers[0])
-                  } else if (q.type === 'multiple' && Array.isArray(answer)) {
+                  if (typeof answer === 'string') {
+                    isCorrect = correctAnswers.some((ca: string) => norm(answer) === norm(ca))
+                  } else if (Array.isArray(answer)) {
                     const given = [...answer].map(norm).sort()
-                    const exp = [...q.correctAnswers].map(norm).sort()
-                    isCorrect =
-                      given.length === exp.length &&
-                      given.every((v, i) => v === exp[i])
+                    const exp = [...correctAnswers].map(norm).sort()
+                    isCorrect = given.length === exp.length && given.every((v, i) => v === exp[i])
                   }
                 }
 
-                return (
-                  <Card key={q.id} className={isWriting ? '' : isCorrect ? 'ring-1 ring-green-500/40' : 'ring-1 ring-destructive/40'}>
-                    <CardContent className="pt-4 space-y-2">
-                      <p className="text-sm font-medium">
-                        <span className="font-bold mr-1">Câu {idx + 1}.</span>
-                        {q.content}
-                      </p>
+                return {
+                  id: q.id,
+                  content: q.content,
+                  answer,
+                  correctAnswers,
+                  isCorrect,
+                  isWriting,
+                  feedback: attempt.feedback?.[q.id]
+                }
+              }).map((result: any, rIdx: number) => (
+                <Card key={result.id} className={result.isWriting ? '' : result.isCorrect ? 'ring-1 ring-green-500/40' : 'ring-1 ring-destructive/40'}>
+                  <CardContent className="pt-4 space-y-2">
+                    <div className="text-sm font-medium">
+                      <span className="font-bold mr-2 text-primary">Question {rIdx + 1}</span>
+                      {result.content}
+                    </div>
 
-                      {isWriting ? (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">Câu trả lời của bạn:</p>
-                          <p className="text-sm bg-muted/50 rounded p-2 whitespace-pre-wrap min-h-8">
-                            {typeof answer === 'string' && answer ? answer : <em className="text-muted-foreground">Chưa trả lời</em>}
-                          </p>
-                          {attempt.feedback && attempt.feedback[q.id] ? (
-                            <div className="mt-3 bg-blue-50/50 p-3 rounded border border-blue-100">
-                              <p className="text-sm font-semibold text-blue-900 mb-1">
-                                Điểm: {attempt.feedback[q.id].score}/10
-                              </p>
-                              <p className="text-sm text-blue-800 whitespace-pre-wrap">
-                                Nhận xét: {attempt.feedback[q.id].comment}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-amber-600 mt-2">⏳ Chưa có nhận xét</p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1 text-sm">
-                          <span>
-                            Câu trả lời của bạn:{' '}
-                            <strong>{Array.isArray(answer) ? answer.join(', ') : (answer || '—')}</strong>
-                          </span>
-                          <span>
-                            Đáp án đúng:{' '}
-                            <strong className="text-green-600">
-                              {q.correctAnswers?.join(', ') ?? '—'}
-                            </strong>
-                          </span>
-                          <span className={isCorrect ? 'text-green-600' : 'text-destructive'}>
-                            {isCorrect ? '✓ Đúng' : '✗ Sai'}
-                          </span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                    {result.isWriting ? (
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Your answer:</p>
+                        <p className="text-sm bg-muted/50 rounded p-2 whitespace-pre-wrap min-h-8">
+                          {typeof result.answer === 'string' && result.answer ? result.answer : <em className="text-muted-foreground">No answer</em>}
+                        </p>
+                        {result.feedback ? (
+                          <div className="mt-3 bg-blue-50/50 p-3 rounded border border-blue-100">
+                            <p className="text-sm font-semibold text-blue-900 mb-1">
+                              Score: {result.feedback.score}/10
+                            </p>
+                            <p className="text-sm text-blue-800 whitespace-pre-wrap">
+                              Feedback: {result.feedback.comment}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-amber-600 mt-2">⏳ Pending evaluation</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1 text-sm border-t pt-2 mt-2">
+                        <span>
+                          Your answer:{' '}
+                          <strong className={cn(!result.answer && "italic text-muted-foreground")}>
+                            {Array.isArray(result.answer) ? result.answer.join(', ') : (result.answer || 'Not answered')}
+                          </strong>
+                        </span>
+                        <span>
+                          Correct answer:{' '}
+                          <strong className="text-green-600">
+                            {result.correctAnswers?.join(', ') || '—'}
+                          </strong>
+                        </span>
+                        <span className={cn("font-bold", result.isCorrect ? 'text-green-600' : 'text-destructive')}>
+                          {result.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </section>
           )
         })}

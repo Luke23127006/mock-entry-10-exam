@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 import { Lightbulb } from 'lucide-react'
+import { FormattedText } from './FormattedText'
 
 interface QuestionEssayProps {
   id: string
@@ -48,7 +49,7 @@ export function QuestionEssay({
           </span>
         )}
         <div className="font-semibold text-lg text-foreground leading-snug pt-1">
-          {promptText}
+          <FormattedText text={promptText} />
         </div>
       </div>
 

@@ -1,16 +1,18 @@
-export type QuestionType = 'mcq' | 'short_input' | 'cloze' | 'essay';
+export type QuestionType = 'mcq' | 'short_input' | 'essay';
 
 export interface BaseQuestion {
   id: string;
   type: QuestionType;
   explanation?: string;
+  correctAnswers: string[];
 }
 
 export interface MCQQuestion extends BaseQuestion {
   type: 'mcq';
   content: string;
   options: string[];
-  correctAnswers: string[];
+  variant?: 'default' | 'compact';
+  layout?: '4x1' | '2x2' | '1x4';
 }
 
 export interface ShortInputQuestion extends BaseQuestion {
@@ -18,19 +20,6 @@ export interface ShortInputQuestion extends BaseQuestion {
   content: string;
   hintText?: string;
   prefix?: string;
-  correctAnswers: string[];
-}
-
-export interface ClozeQuestion extends BaseQuestion {
-  type: 'cloze';
-  passageContent: string;
-  blanks: {
-    id: string;
-    type: 'input' | 'select';
-    options?: string[];
-    correctAnswers: string[];
-    explanation?: string;
-  }[];
 }
 
 export interface EssayQuestion extends BaseQuestion {
@@ -41,7 +30,7 @@ export interface EssayQuestion extends BaseQuestion {
   rubric?: string;
 }
 
-export type Question = MCQQuestion | ShortInputQuestion | ClozeQuestion | EssayQuestion;
+export type Question = MCQQuestion | ShortInputQuestion | EssayQuestion;
 
 export interface Section {
   title: string;

@@ -9,6 +9,11 @@ This guide provides a standardized workflow for converting raw 9th-grade English
 The hierarchy of an exam follows this path:
 **Exam** → **Sections** → **Components (Questions/Passages)**
 
+### 💡 Text Formatting: Underlining
+To underline specific parts of words or sentences (essential for phonetics or error identification), use the `__text__` syntax.
+- Example: `play__ed__` renders as play<u>ed</u>.
+- Example: `(A) __The__ children (B) __enjoy__...` renders as (A) <u>The</u> children (B) <u>enjoy</u>...
+
 ### Global Exam Object
 ```json
 {
@@ -33,20 +38,34 @@ Every exam must be split into logical sections (e.g., Phonetics, Vocabulary, Rea
 
 ---
 
+### General Question Properties
+All question types support these optional fields:
+- `pointValue`: (Number) How many points the question is worth. Defaults to 1.
+- `explanation`: (String) Pedagogical feedback shown in Review Mode.
+
+---
+
 ## 3. Question Type Mapping
 
 ### A. Multiple Choice (MCQ)
 **Use for**: Phonetics, Grammar, Vocabulary choice.
 - **Rule**: `options` must be an array of strings.
 - **Rule**: `correctAnswers` must contain the exact string(s) matching the correct option.
+- **Visual Options**:
+    - `variant`: Set to `"compact"` for horizontal alignment (good for cloze-style).
+    - `layout`: 
+        - `"4x1"` (Vertical - Default)
+        - `"2x2"` (Grid)
+        - `"1x4"` (Horizontal - Default for compact)
 
 ```json
 {
   "id": "q1",
   "type": "mcq",
-  "content": "Choose the word that has the underlined part pronounced differently:",
-  "options": ["cat", "hat", "mate", "bat"],
-  "correctAnswers": ["mate"]
+  "content": "Choose the word with different stress:",
+  "options": ["teacher", "student", "advice", "parent"],
+  "correctAnswers": ["advice"],
+  "layout": "2x2"
 }
 ```
 
@@ -60,42 +79,41 @@ Every exam must be split into logical sections (e.g., Phonetics, Vocabulary, Rea
   "type": "short_input",
   "content": "Supply the correct form of the word in brackets: INTEREST",
   "prefix": "This movie is very",
-  "correctAnswers": ["interesting"]
+  "correctAnswers": ["interesting"],
+  "pointValue": 0.5
 }
 ```
 
-### C. Cloze Test (Traditional)
-**Use for**: Passages with numbered blanks where options are listed below the text.
-- **Logic**: Use `[id]` markers (e.g., `[21]`) in `passageContent`. The system will render these as `(21) _______`.
-- **Blanks**: Each blank will be rendered as a compact MCQ question below the passage.
+### C. Reading Passage + Questions (Preferred Pattern)
+**Use for**: Cloze tests or Reading Comprehension.
+- **Logic**: Instead of a special `cloze` type, place the text in the section's `readingPassage` field and add individual `mcq` questions to the `components` array.
+- **Placeholder**: Manually type `(21) _______` inside the reading passage text.
+- **Question Labels**: Set the MCQ `content` to `(21)` to match the text.
+- **Optimization**: Use `"variant": "compact"` and `"layout": "1x4"` for a professional paper-like look.
 
 ```json
 {
-  "id": "q3",
-  "type": "cloze",
-  "passageContent": "London is the [21] city in the UK. Many people [22] it every year.",
-  "blanks": [
-    { 
-      "id": "21", 
-      "type": "select", 
-      "options": ["largest", "larger", "large", "most large"], 
+  "title": "Part III: Reading",
+  "instruction": "Read the following passage and choose the best answer for each blank.",
+  "readingPassage": "London is the (21) _______ city in the UK. Many people (22) _______ it every year...",
+  "components": [
+    {
+      "id": "q21",
+      "type": "mcq",
+      "content": "(21)",
+      "options": ["largest", "larger", "large", "most large"],
       "correctAnswers": ["largest"],
-      "explanation": "Superlative form is required here."
-    },
-    { 
-      "id": "22", 
-      "type": "select", 
-      "options": ["visit", "visits", "visiting", "visited"], 
-      "correctAnswers": ["visit"],
-      "explanation": "Present simple for a general fact with plural subject."
+      "pointValue": 0.25,
+      "variant": "compact",
+      "layout": "1x4"
     }
-  ],
-  "explanation": "This passage is about London's geography and tourism."
+  ]
 }
 ```
 
 ### D. Essay / Writing
 **Use for**: Paragraph writing, Letter writing.
+- **Note**: These are not auto-graded. A teacher must provide feedback.
 
 ```json
 {
@@ -104,7 +122,8 @@ Every exam must be split into logical sections (e.g., Phonetics, Vocabulary, Rea
   "promptText": "Write a paragraph (100-150 words) about your favorite hobby.",
   "minWords": 100,
   "maxWords": 150,
-  "rubric": "Structure (2pts), Grammar (3pts), Content (5pts)"
+  "rubric": "Structure (2pts), Grammar (3pts), Content (5pts)",
+  "pointValue": 10
 }
 ```
 
