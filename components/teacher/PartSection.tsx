@@ -3,7 +3,6 @@
 import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ExamPartHeader from '@/components/exam/ExamPartHeader'
 import QuestionEditorCard from './QuestionEditorCard'
 import type { ExamBuilderValues, PartKey } from './ExamBuilderForm'
 
@@ -36,7 +35,12 @@ export default function PartSection({ part, control, register }: Props) {
 
   return (
     <section className="space-y-4">
-      <ExamPartHeader part={part} />
+      <div className="flex items-center gap-2 py-2 border-b">
+        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
+          {part}
+        </span>
+        <h3 className="font-bold text-lg uppercase tracking-tight">Phần {part}</h3>
+      </div>
       {fields.length === 0 && (
         <p className="text-sm text-muted-foreground italic">Chưa có câu hỏi nào.</p>
       )}

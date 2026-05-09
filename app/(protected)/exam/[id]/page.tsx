@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
-import AnswerSheet from '@/components/exam/AnswerSheet'
+import ExamViewerWrapper from '@/components/exam/ExamViewerWrapper'
 import type { Exam, ExamAttempt } from '@/types/database'
 
 interface Props {
@@ -22,7 +22,6 @@ export default async function ExamPage({ params }: Props) {
     .maybeSingle<ExamAttempt>()
 
   if (attempt) {
-    // ID matched an attempt
     if (attempt.status === 'completed') redirect(`/exam/${id}/result`)
 
     const { data: exam } = await supabase
@@ -32,7 +31,7 @@ export default async function ExamPage({ params }: Props) {
       .single<Exam>()
 
     if (!exam) redirect('/dashboard')
-    return <AnswerSheet attempt={attempt} exam={exam} />
+    return <ExamViewerWrapper attempt={attempt} exam={exam} />
   }
 
   // ── Treat ID as an exam ID: find or create a draft attempt ─────────────────
@@ -44,22 +43,20 @@ export default async function ExamPage({ params }: Props) {
 
   if (!exam) redirect('/dashboard')
 
-  // Check for an existing attempt on this exam
   const { data: existing } = await supabase
     .from('exam_attempts')
     .select('*')
     .eq('user_id', session.id)
     .eq('exam_id', id)
-    .order('status') // 'completed' sorts before 'draft'
+    .order('status')
     .limit(1)
     .maybeSingle<ExamAttempt>()
 
   if (existing) {
     if (existing.status === 'completed') redirect(`/exam/${existing.id}/result`)
-    return <AnswerSheet attempt={existing} exam={exam} />
+    return <ExamViewerWrapper attempt={existing} exam={exam} />
   }
 
-  // No attempt yet — create a fresh draft
   const { data: newAttempt, error } = await supabase
     .from('exam_attempts')
     .insert({ user_id: session.id, exam_id: id, answers: {}, status: 'draft' })
@@ -68,5 +65,6 @@ export default async function ExamPage({ params }: Props) {
 
   if (error || !newAttempt) redirect('/dashboard')
 
-  return <AnswerSheet attempt={newAttempt} exam={exam} />
+  return <ExamViewerWrapper attempt={newAttempt} exam={exam} />
 }
+
