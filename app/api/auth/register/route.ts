@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'Tên đăng nhập đã tồn tại.' }, { status: 409 })
     }
+    console.error("Supabase insert error:", error);
     return NextResponse.json({ error: 'Đăng ký thất bại. Vui lòng thử lại.' }, { status: 500 })
   }
 

@@ -4,6 +4,7 @@ CREATE TABLE users (
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     full_name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'student',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
