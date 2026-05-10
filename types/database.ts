@@ -49,5 +49,6 @@ export interface ExamAttempt {
   status: 'draft' | 'completed'
   score: string
   feedback: Record<string, WritingFeedback> | null
+  question_scores: Record<string, number> | null
   is_graded: boolean
 }

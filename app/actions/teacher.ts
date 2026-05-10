@@ -33,19 +33,17 @@ export async function createExam(formData: FormData): Promise<void> {
   redirect('/teacher')
 }
 
-export async function submitWritingFeedback(
+export async function syncAttempt(
   attemptId: string,
-  feedback: Record<string, WritingFeedback>,
+  feedbackOverride?: Record<string, WritingFeedback>,
 ): Promise<void> {
-  await requireTeacher()
-
   const { data: attempt } = await supabase
     .from('exam_attempts')
-    .select('exam_id, answers, status')
+    .select('exam_id, answers, feedback')
     .eq('id', attemptId)
-    .single<Pick<ExamAttempt, 'exam_id' | 'answers' | 'status'>>()
+    .single<Pick<ExamAttempt, 'exam_id' | 'answers' | 'feedback'>>()
 
-  if (!attempt || attempt.status !== 'completed') redirect('/teacher/attempts')
+  if (!attempt) return
 
   const { data: exam } = await supabase
     .from('exams')
@@ -53,14 +51,46 @@ export async function submitWritingFeedback(
     .eq('id', attempt.exam_id)
     .single<Pick<Exam, 'content'>>()
 
-  const content = exam?.content as any
-  const questions = content?.questions || content?.sections?.flatMap((s: any) => s.components) || []
-  const { autoScore } = scoreExam(questions, attempt.answers)
-  const finalScore = computeFinalScore(autoScore, feedback)
+  if (!exam) return
+
+  const content = exam.content as any
+  const questions = content.questions || content.sections?.flatMap((s: any) => s.components) || []
+  
+  // Parse and merge feedback
+  let currentFeedback: Record<string, WritingFeedback> = {}
+  if (attempt.feedback) {
+    if (typeof attempt.feedback === 'string') {
+      try { currentFeedback = JSON.parse(attempt.feedback) } catch {}
+    } else {
+      currentFeedback = attempt.feedback as Record<string, WritingFeedback>
+    }
+  }
+  const mergedFeedback = { ...currentFeedback, ...feedbackOverride }
+
+  const { autoScore: finalTotalScore, questionScores } = scoreExam(questions, attempt.answers, mergedFeedback)
 
   await supabase
     .from('exam_attempts')
-    .update({ feedback, score: finalScore.toString(), is_graded: true })
+    .update({ 
+      feedback: mergedFeedback, 
+      score: finalTotalScore.toString(), 
+      question_scores: questionScores,
+    })
+    .eq('id', attemptId)
+}
+
+export async function submitWritingFeedback(
+  attemptId: string,
+  feedback: Record<string, WritingFeedback>,
+): Promise<void> {
+  await requireTeacher()
+
+  await syncAttempt(attemptId, feedback)
+  
+  // Mark as graded
+  await supabase
+    .from('exam_attempts')
+    .update({ is_graded: true })
     .eq('id', attemptId)
 
   redirect('/teacher/attempts')

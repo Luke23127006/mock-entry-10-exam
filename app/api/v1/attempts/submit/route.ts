@@ -65,9 +65,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 2. Score MCQ questions
-    const { autoScore, maxAutoScore } = scoreExam(questions, answers)
-
     // 3. Grade writing questions via Gemini API
     const writingQuestions = questions.filter((q: Question) => {
       const type = (q.type || '').toLowerCase()
@@ -85,26 +82,25 @@ export async function POST(req: NextRequest) {
       feedback[wq.id] = await gradeWritingWithAI(wq, studentAnswer)
     }
 
-    // 4. Calculate total score & save
-    const finalScore = computeFinalScore(autoScore, feedback)
-
-    const scoreText = finalScore.toString()
-
-    const { error } = await supabase
+    // 4. Update initial attempt data and sync scores
+    const { error: updateError } = await supabase
       .from('exam_attempts')
       .update({
         answers,
         status: 'completed',
-        score: scoreText,
         feedback,
         is_graded: false
       })
       .eq('id', attemptId)
       .eq('user_id', userId)
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
+
+    // Call syncAttempt to ensure scores and question_scores are correctly calculated and saved
+    const { syncAttempt } = await import('@/app/actions/teacher')
+    await syncAttempt(attemptId)
 
     return NextResponse.json({ success: true, redirect: `/exam/${attemptId}/result` })
 

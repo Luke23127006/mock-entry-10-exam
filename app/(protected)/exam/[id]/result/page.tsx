@@ -34,8 +34,11 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const questions: Question[] = exam.content.questions || sections.flatMap((s: any) => s.components) || []
   
   const answers = attempt.answers
-  const { autoScore, maxAutoScore, hasWriting } = scoreExam(questions, answers)
-  const totalScore = computeFinalScore(autoScore, attempt.feedback)
+  const feedback = (typeof attempt.feedback === 'string' ? JSON.parse(attempt.feedback || '{}') : attempt.feedback) || {}
+  
+  // Use stored score if available, otherwise calculate
+  const totalScore = parseFloat(attempt.score || '0')
+  const { autoScore, maxAutoScore, hasWriting } = scoreExam(questions, answers, feedback)
 
   const parts = ['A', 'B', 'C', 'D'] as const
   

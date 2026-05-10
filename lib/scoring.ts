@@ -4,6 +4,7 @@ export interface ScoreResult {
   autoScore: number
   maxAutoScore: number
   hasWriting: boolean
+  questionScores: Record<string, number>
 }
 
 function normalize(value: string): string {
@@ -34,10 +35,12 @@ function isMultipleCorrect(
 export function scoreExam(
   questions: any[],
   answers: Record<string, any>,
+  feedback: Record<string, WritingFeedback> = {}
 ): ScoreResult {
   let autoScore = 0
   let maxAutoScore = 0
   let hasWriting = false
+  const questionScores: Record<string, number> = {}
 
   for (const q of questions) {
     const pointValue = q.pointValue ?? 1
@@ -45,15 +48,24 @@ export function scoreExam(
 
     const type = (q.type || '').toLowerCase()
     const part = (q.part || '').toLowerCase()
-
     const isWriting = type.includes('writing') || 
                      type.includes('essay') || 
                      part.includes('d') || 
                      part.includes('writing') ||
                      !!q.rubric
 
+    if (isWriting) hasWriting = true
+
+    // If teacher provided a manual score (even 0), use it as an override
+    if (feedback[q.id]) {
+      const manualScore = feedback[q.id].score
+      autoScore += manualScore
+      questionScores[q.id] = manualScore
+      continue
+    }
+
     if (isWriting) {
-      hasWriting = true
+      questionScores[q.id] = 0 // Default for writing until graded
       continue
     }
 
@@ -65,13 +77,16 @@ export function scoreExam(
       ? isSingleCorrect(answer, correctAnswers)
       : isMultipleCorrect(answer, correctAnswers)
 
-    if (correct) autoScore += pointValue
+    const qScore = correct ? pointValue : 0
+    autoScore += qScore
+    questionScores[q.id] = qScore
   }
 
   return {
     autoScore: Math.round(autoScore * 100) / 100,
     maxAutoScore: Math.round(maxAutoScore * 100) / 100,
     hasWriting,
+    questionScores,
   }
 }
 
@@ -79,18 +94,8 @@ export function computeFinalScore(
   autoScore: number,
   feedback: any,
 ): number {
-  let feedbackObj = feedback
-  if (typeof feedback === 'string' && feedback.trim() !== '') {
-    try {
-      feedbackObj = JSON.parse(feedback)
-    } catch (e) {
-      console.error('Failed to parse feedback JSON:', e)
-      feedbackObj = {}
-    }
-  }
-  
-  const teacherScore = feedbackObj
-    ? Object.values(feedbackObj).reduce((sum: number, f: any) => sum + (f.score ?? 0), 0)
-    : 0
-  return Math.round((autoScore + teacherScore) * 100) / 100
+  // Now that scoreExam handles feedback overrides, computeFinalScore is essentially redundant
+  // but we keep it for compatibility if needed elsewhere, returning the autoScore as the final score
+  // if feedback was already processed by scoreExam.
+  return Math.round(autoScore * 100) / 100
 }

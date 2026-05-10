@@ -10,6 +10,7 @@ import type { Exam, ExamAttempt, Question } from '@/types/database'
 import { CheckCircle2, XCircle, LayoutGrid, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface ResultViewerProps {
   exam: Exam
@@ -67,21 +68,30 @@ export function ResultViewer({
     return false
   }
 
+  const getQuestionStatus = (q: any) => {
+    const score = attempt.question_scores?.[q.id] ?? (checkIsCorrect(q) ? (q.pointValue ?? 1) : 0)
+    const max = q.pointValue ?? 1
+    
+    if (score >= max) return 'correct'
+    if (score > 0) return 'partial'
+    return 'incorrect'
+  }
+
   // Calculate global indices and apply filter
   let globalIndex = 0
   const filteredSections = displaySections.map(section => {
     const sectionQs = section.components || []
     const questionsWithIndices = sectionQs.map((q: any) => {
       globalIndex++
-      const isCorrect = checkIsCorrect(q)
-      return { ...q, globalIndex: globalIndex, isCorrectResult: isCorrect }
+      const status = getQuestionStatus(q)
+      return { ...q, globalIndex: globalIndex, status }
     })
 
     const filteredQs = questionsWithIndices.filter((q: any) => {
       if (filter === 'all') return true
       if (q.type === 'writing' || q.type === 'essay') return false // Only show in 'all' view
-      if (filter === 'correct') return q.isCorrectResult
-      if (filter === 'wrong') return !q.isCorrectResult
+      if (filter === 'correct') return q.status === 'correct' || q.status === 'partial'
+      if (filter === 'wrong') return q.status === 'incorrect'
       return true
     })
 
@@ -181,12 +191,15 @@ export function ResultViewer({
                                   part.includes('d') || 
                                   part.includes('writing') ||
                                   !!q.rubric
-                const isCorrect = q.isCorrectResult
+                const status = q.status
 
                 return (
                   <Card key={q.id} className={cn(
                     "transition-all duration-300",
-                    isWriting ? 'border-border' : isCorrect ? 'border-green-200 bg-green-50/30' : 'border-destructive/20 bg-destructive/5'
+                    isWriting ? 'border-border' : 
+                    status === 'correct' ? 'border-green-200 bg-green-50/30' : 
+                    status === 'partial' ? 'border-amber-200 bg-amber-50/30' : 
+                    'border-destructive/20 bg-destructive/5'
                   )}>
                     <CardContent className="pt-5 space-y-4">
                       <div className="text-base font-semibold leading-relaxed flex gap-3">
@@ -242,12 +255,14 @@ export function ResultViewer({
                                 </div>
                                 {!feedback[q.id].isAI && <CheckCircle2 className="h-4 w-4 text-green-600" />}
                               </div>
-                              <div className={cn(
-                                "text-sm leading-relaxed feedback-content",
-                                feedback[q.id].isAI ? "text-amber-800/80 italic" : "text-green-800"
+                              {feedback[q.id].comment && (
+                                <div className={cn(
+                                  "text-sm leading-relaxed feedback-content",
+                                  feedback[q.id].isAI ? "text-amber-800/80 italic" : "text-green-800"
+                                )}
+                                dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }}
+                                />
                               )}
-                              dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }}
-                              />
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 mt-2 py-4 px-6 rounded-2xl bg-amber-50/30 border border-amber-100/50 text-amber-600">
@@ -257,50 +272,68 @@ export function ResultViewer({
                           )}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-12 border-t pt-4 mt-2">
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your response</p>
-                            <div className={cn("text-sm font-bold", !answer && "italic text-muted-foreground font-normal")}>
-                              {(() => {
-                                if (!answer) return 'None'
-                                const ansArray = Array.isArray(answer) ? answer : [answer]
-                                return ansArray.map((a, i) => {
-                                  const oIdx = q.options?.indexOf(a)
+                        <div className="pl-12 space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-2">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your response</p>
+                              <div className={cn("text-sm font-bold", !answer && "italic text-muted-foreground font-normal")}>
+                                {(() => {
+                                  if (!answer) return 'None'
+                                  const ansArray = Array.isArray(answer) ? answer : [answer]
+                                  return ansArray.map((a, i) => {
+                                    const oIdx = q.options?.indexOf(a)
+                                    const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
+                                    return (
+                                      <div key={i}>
+                                        {label}<FormattedText text={a} />
+                                      </div>
+                                    )
+                                  })
+                                })()}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Correct Answer</p>
+                              <div className="text-sm font-bold text-green-600">
+                                {q.correctAnswers?.map((ca: string, i: number) => {
+                                  const oIdx = q.options?.indexOf(ca)
                                   const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
                                   return (
                                     <div key={i}>
-                                      {label}<FormattedText text={a} />
+                                      {label}<FormattedText text={ca} />
                                     </div>
                                   )
-                                })
-                              })()}
+                                }) || '—'}
+                              </div>
+                            </div>
+                            <div className="sm:col-span-2 flex items-center gap-2">
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter",
+                                status === 'correct' ? 'bg-green-100 text-green-700' : 
+                                status === 'partial' ? 'bg-amber-100 text-amber-700' : 
+                                'bg-destructive/10 text-destructive'
+                              )}>
+                                {status === 'correct' ? '✓ Correct' : status === 'partial' ? '⚠ Partial' : '✗ Incorrect'}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tracking-tighter">
+                                {attempt.question_scores?.[q.id] ?? (status === 'correct' ? (q.pointValue ?? 1) : 0)} / {q.pointValue ?? 1} points
+                              </span>
                             </div>
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Correct Answer</p>
-                            <div className="text-sm font-bold text-green-600">
-                              {q.correctAnswers?.map((ca: string, i: number) => {
-                                const oIdx = q.options?.indexOf(ca)
-                                const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
-                                return (
-                                  <div key={i}>
-                                    {label}<FormattedText text={ca} />
-                                  </div>
-                                )
-                              }) || '—'}
+
+                          {/* Teacher feedback for non-writing questions */}
+                          {feedback && feedback[q.id] && feedback[q.id].comment && (
+                            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 shadow-sm">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[9px] uppercase tracking-widest py-0">Teacher Comment</Badge>
+                                {feedback[q.id].score !== undefined && (
+                                  <span className="text-[10px] font-bold text-primary">Score adjusted to {feedback[q.id].score}</span>
+                                )}
+                              </div>
+                              <div className="text-sm text-foreground/80 leading-relaxed italic" 
+                                   dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }} />
                             </div>
-                          </div>
-                          <div className="sm:col-span-2 flex items-center gap-2">
-                            <span className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter",
-                              isCorrect ? 'bg-green-100 text-green-700' : 'bg-destructive/10 text-destructive'
-                            )}>
-                              {isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tracking-tighter">
-                              {isCorrect ? (q.pointValue ?? 1) : 0} / {q.pointValue ?? 1} points
-                            </span>
-                          </div>
+                          )}
                         </div>
                       )}
 
