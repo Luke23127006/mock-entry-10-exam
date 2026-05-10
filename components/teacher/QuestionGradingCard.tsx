@@ -10,6 +10,7 @@ import { Sparkles, UserCircle, CheckCircle2, Info, HelpCircle } from 'lucide-rea
 import { cn } from '@/lib/utils'
 import type { Question, WritingFeedback } from '@/types/database'
 import { FormattedText } from '@/components/exam/FormattedText'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 
 interface Props {
   question: Question
@@ -38,6 +39,7 @@ export default function QuestionGradingCard({
   const maxScore = question.pointValue ?? 1
   const initialScore = existing?.score ?? (isWriting ? 0 : autoScore)
   const [currentScore, setCurrentScore] = useState<number>(initialScore)
+  const [currentComment, setCurrentComment] = useState<string>(existing?.comment ?? '')
 
   const renderMultiAnswer = (ans: string | string[] | undefined) => {
     if (!ans) return '—'
@@ -160,11 +162,15 @@ export default function QuestionGradingCard({
             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
               Nhận xét và góp ý
             </Label>
-            <Textarea
-              name={`feedback[${question.id}][comment]`}
-              defaultValue={existing?.comment ?? ''}
+            <RichTextEditor
+              value={currentComment}
+              onChange={setCurrentComment}
               placeholder={isWriting ? "Nhập nhận xét chi tiết cho học sinh..." : "Ghi chú về việc điều chỉnh điểm (nếu có)..."}
-              className="min-h-[6rem] rounded-xl border-border/60 focus:ring-primary/20 bg-white leading-relaxed"
+            />
+            <input 
+              type="hidden" 
+              name={`feedback[${question.id}][comment]`} 
+              value={currentComment} 
             />
           </div>
         </div>

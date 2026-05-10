@@ -257,8 +257,10 @@ export function ResultViewer({
                               </div>
                               {feedback[q.id].comment && (
                                 <div className={cn(
-                                  "text-sm leading-relaxed feedback-content",
-                                  feedback[q.id].isAI ? "text-amber-800/80 italic" : "text-green-800"
+                                  "text-sm leading-relaxed feedback-content prose prose-sm max-w-none",
+                                  feedback[q.id].isAI 
+                                    ? "text-amber-800/80 italic prose-amber" 
+                                    : "text-green-800 prose-green"
                                 )}
                                 dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }}
                                 />
