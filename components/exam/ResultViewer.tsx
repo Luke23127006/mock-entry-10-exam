@@ -242,12 +242,12 @@ export function ResultViewer({
                                 </div>
                                 {!feedback[q.id].isAI && <CheckCircle2 className="h-4 w-4 text-green-600" />}
                               </div>
-                              <p className={cn(
-                                "text-sm leading-relaxed",
+                              <div className={cn(
+                                "text-sm leading-relaxed feedback-content",
                                 feedback[q.id].isAI ? "text-amber-800/80 italic" : "text-green-800"
-                              )}>
-                                {feedback[q.id].comment}
-                              </p>
+                              )}
+                              dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }}
+                              />
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 mt-2 py-4 px-6 rounded-2xl bg-amber-50/30 border border-amber-100/50 text-amber-600">

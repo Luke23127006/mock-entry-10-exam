@@ -37,9 +37,9 @@ ${studentAnswer}
 
 Provide:
 1. A score out of 1.
-2. Constructive feedback in Vietnamese, pointing out grammar/spelling mistakes and suggesting better vocabulary.
+2. Constructive feedback in Vietnamese, pointing out grammar/spelling mistakes and suggesting better vocabulary. Use HTML tags (<b>, <i>, <ul>, <li>, <br/>) to format the feedback for a better reading experience. Structure the feedback clearly with headings or lists if necessary.
 
-Output the response purely in JSON format: { "score": number, "feedback": "string" }.`
+Output the response purely in JSON format: { "score": number, "feedback": "string (HTML)" }.`
 
   try {
     const result = await model.generateContent(prompt)
