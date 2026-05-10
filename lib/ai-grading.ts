@@ -28,6 +28,8 @@ ${question.correctAnswers && question.correctAnswers.length > 0 ? `Reference Cor
 Rubric: ${question.rubric || 'No specific rubric provided, use general English writing standards'}
 `.trim()
 
+  const isShortWriting = (question.type || '').toLowerCase().includes('short_writing')
+
   const prompt = `You are a strict but helpful 9th-grade English teacher. Grade the following student's response based on the question details and reference correct answers provided.
 
 ### Question Details & Reference:
@@ -37,14 +39,18 @@ ${questionInfo}
 ${studentAnswer}
 
 Grading Guidelines:
-1. If reference answers are provided, the student's response should be semantically equivalent to at least one of them. It does NOT have to match word-for-word.
-2. If it's a short factual question (ShortWriting), prioritize the factual accuracy according to the reference answers.
-3. If it's an essay, grade based on grammar, vocabulary, and relevance.
-4. Always provide feedback in Vietnamese.
+1. Semantic Accuracy: The student's response must be semantically equivalent to at least one reference answer.
+2. ShortWriting Rules:
+   - Perfect Answer (Correct fact + Correct grammar): 1.0
+   - Minor Grammar Issues (Correct fact but minor error like missing 'the', small spelling slip): 0.5 to 0.8
+   - Serious Mistakes (Wrong vocabulary, incorrect fact, or unintelligible grammar): 0.0
+   - ${isShortWriting ? 'Keep the feedback VERY BRIEF (1 sentence max).' : ''}
+3. Essay Rules: Grade based on grammar, vocabulary, and relevance.
+4. Language: Always provide feedback in Vietnamese.
 
 Provide:
 1. A score from 0.0 to 1.0 (where 1.0 is full marks).
-2. Constructive feedback in Vietnamese, pointing out grammar/spelling mistakes and suggesting better vocabulary. Use HTML tags (<b>, <i>, <ul>, <li>, <br/>) to format the feedback.
+2. Constructive feedback in Vietnamese, pointing out grammar/spelling mistakes and suggesting better vocabulary. ${isShortWriting ? 'For this short question, just provide a quick note on correctness.' : 'Use HTML tags (<b>, <i>, <ul>, <li>, <br/>) to format the feedback.'}
 
 Output the response purely in JSON format: { "score": number, "feedback": "string (HTML)" }.`
 

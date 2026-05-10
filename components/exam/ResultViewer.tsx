@@ -196,7 +196,7 @@ export function ResultViewer({
                 return (
                   <Card key={q.id} className={cn(
                     "transition-all duration-300",
-                    isWriting ? 'border-border' : 
+                    isWriting && !feedback?.[q.id] ? 'border-border' : 
                     status === 'correct' ? 'border-green-200 bg-green-50/30' : 
                     status === 'partial' ? 'border-amber-200 bg-amber-50/30' : 
                     'border-destructive/20 bg-destructive/5'
@@ -229,26 +229,45 @@ export function ResultViewer({
                           <div className="text-sm bg-background border rounded-xl p-4 whitespace-pre-wrap min-h-[4rem] shadow-sm">
                             {typeof answer === 'string' && answer ? answer : <em className="text-muted-foreground font-normal">No answer submitted</em>}
                           </div>
+
+                          {q.correctAnswers && q.correctAnswers.length > 0 && (
+                            <div className="space-y-2 pt-2">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Answer:</p>
+                              <div className="text-sm font-bold text-green-700 bg-green-50/50 border border-green-100 rounded-xl p-4 shadow-sm">
+                                {q.correctAnswers.map((ca: string, i: number) => (
+                                  <div key={i} className="mb-1 last:mb-0">
+                                    <FormattedText text={ca} />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {feedback && feedback[q.id] ? (
                             <div className={cn(
                               "mt-4 p-5 rounded-2xl border shadow-sm",
-                              feedback[q.id].isAI 
-                                ? "bg-amber-50/50 border-amber-200" 
-                                : "bg-green-50/50 border-green-200"
+                              feedback[q.id].score >= (q.pointValue || 1)
+                                ? "bg-green-50/50 border-green-200"
+                                : feedback[q.id].isAI 
+                                  ? "bg-amber-50/50 border-amber-200" 
+                                  : "bg-green-50/50 border-green-200"
                             )}>
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                   <div className={cn(
                                     "text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest",
-                                    feedback[q.id].isAI 
-                                      ? "bg-amber-100 text-amber-700" 
-                                      : "bg-green-600 text-white"
+                                    feedback[q.id].score >= (q.pointValue || 1)
+                                      ? "bg-green-600 text-white"
+                                      : feedback[q.id].isAI 
+                                        ? "bg-amber-100 text-amber-700" 
+                                        : "bg-green-600 text-white"
                                   )}>
                                     {feedback[q.id].isAI ? 'AI Evaluation' : 'Teacher Feedback'}
                                   </div>
                                   <p className={cn(
                                     "text-sm font-black",
-                                    feedback[q.id].isAI ? "text-amber-900" : "text-green-900"
+                                    feedback[q.id].score >= (q.pointValue || 1)
+                                      ? "text-green-900"
+                                      : feedback[q.id].isAI ? "text-amber-900" : "text-green-900"
                                   )}>
                                     Score: {feedback[q.id].score} / {q.pointValue || 1}
                                   </p>
@@ -258,9 +277,11 @@ export function ResultViewer({
                               {feedback[q.id].comment && (
                                 <div className={cn(
                                   "text-sm leading-relaxed feedback-content prose prose-sm max-w-none",
-                                  feedback[q.id].isAI 
-                                    ? "text-amber-800/80 italic prose-amber" 
-                                    : "text-green-800 prose-green"
+                                  feedback[q.id].score >= (q.pointValue || 1)
+                                    ? "text-green-800 prose-green"
+                                    : feedback[q.id].isAI 
+                                      ? "text-amber-800/80 italic prose-amber" 
+                                      : "text-green-800 prose-green"
                                 )}
                                 dangerouslySetInnerHTML={{ __html: feedback[q.id].comment }}
                                 />
