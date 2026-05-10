@@ -3,7 +3,7 @@ export type UserRole = 'student' | 'teacher'
 export interface Question {
   id: string
   part: 'A' | 'B' | 'C' | 'D'
-  type: 'single' | 'multiple' | 'writing' | 'short_answer' | 'cloze' | 'mcq' | 'short_input' | 'essay'
+  type: 'single' | 'multiple' | 'writing' | 'short_answer' | 'cloze' | 'mcq' | 'short_input' | 'essay' | 'short_writing'
   pointValue: number
   content: string
   options?: string[]

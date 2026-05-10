@@ -1,4 +1,4 @@
-export type QuestionType = 'mcq' | 'short_input' | 'essay';
+export type QuestionType = 'mcq' | 'short_input' | 'essay' | 'short_writing';
 
 export interface BaseQuestion {
   id: string;
@@ -30,7 +30,15 @@ export interface EssayQuestion extends BaseQuestion {
   rubric?: string;
 }
 
-export type Question = MCQQuestion | ShortInputQuestion | EssayQuestion;
+export interface ShortWritingQuestion extends BaseQuestion {
+  type: 'short_writing';
+  content: string;
+  hintText?: string;
+  prefix?: string;
+  rubric?: string;
+}
+
+export type Question = MCQQuestion | ShortInputQuestion | EssayQuestion | ShortWritingQuestion;
 
 export interface Section {
   title: string;

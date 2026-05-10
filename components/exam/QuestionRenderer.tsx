@@ -39,12 +39,13 @@ export function QuestionRenderer({
         />
       )
     case 'short_input':
+    case 'short_writing':
       return (
         <QuestionShortInput
           id={question.id}
           content={question.content}
-          prefix={question.prefix}
-          hintText={question.hintText}
+          prefix={(question as any).prefix}
+          hintText={(question as any).hintText}
           value={(value as string) || ''}
           onChange={onChange}
           questionNumber={questionNumber}
