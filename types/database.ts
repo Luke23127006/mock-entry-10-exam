@@ -32,6 +32,7 @@ export interface Exam {
   id: string
   title: string
   content: ExamContent
+  created_at: string
 }
 
 export interface WritingFeedback {
