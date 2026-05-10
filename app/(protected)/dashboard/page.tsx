@@ -3,7 +3,7 @@ import { getSession } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { logout } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
-import { ExamList } from '../../../components/exam/ExamList'
+import { ExamList } from '@/components/exam/ExamList'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,5 +1,7 @@
 'use client'
 
+// Component for displaying and filtering the list of available exams.
+
 import * as React from 'react'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
