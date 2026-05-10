@@ -6,6 +6,8 @@ import { buttonVariants } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 import QuestionGradingCard from '@/components/teacher/QuestionGradingCard'
 import type { Exam, ExamAttempt, User, Question, WritingFeedback } from '@/types/database'
+import { ChevronLeft, PencilLine, CheckCircle, UserCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ attemptId: string }>
@@ -55,7 +57,6 @@ export default async function FeedbackPage({ params }: Props) {
       const scoreStr = formData.get(`feedback[${q.id}][score]`)
       const comment = (formData.get(`feedback[${q.id}][comment]`) as string) ?? ''
       
-      // If teacher touched the score or comment, or if it was already existing
       if (scoreStr !== null || comment || existingFeedback[q.id]) {
         const score = parseFloat(scoreStr as string) || 0
         feedback[q.id] = { score, comment, isAI: false }
@@ -81,20 +82,34 @@ export default async function FeedbackPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-muted/30 py-10 px-4">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Chấm bài & Điều chỉnh điểm</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Học sinh: <span className="font-bold text-foreground">{student?.full_name ?? student?.username}</span> — {exam.title}
-            </p>
+      <div className="max-w-4xl mx-auto space-y-8">
+        
+        {/* Header Section */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-primary/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <PencilLine className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Chấm bài & Điều chỉnh</h1>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium mt-0.5">
+                <UserCircle className="h-3.5 w-3.5" />
+                <span>{student?.full_name ?? student?.username}</span>
+                <span className="opacity-30">•</span>
+                <span className="line-clamp-1">{exam.title}</span>
+              </div>
+            </div>
           </div>
-          <Link href="/teacher/attempts" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-            ← Quay lại
+          <Link 
+            href="/teacher/attempts" 
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "rounded-full px-4 border-primary/20 hover:bg-primary/5 transition-all gap-1.5 shadow-sm self-start md:self-center")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Quay lại
           </Link>
         </div>
 
-        <form action={handleSubmit} className="space-y-6 pb-20">
+        <form action={handleSubmit} className="space-y-6 pb-24">
           {questions.map((q: Question, idx: number) => {
             const answer = attempt.answers[q.id]
             const isCorrect = checkIsCorrect(q, answer)
@@ -112,9 +127,13 @@ export default async function FeedbackPage({ params }: Props) {
             )
           })}
           
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t shadow-lg z-50">
-            <div className="max-w-3xl mx-auto flex justify-end">
-              <Button type="submit" size="lg" className="rounded-full px-10 shadow-xl">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-primary/10 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-50">
+            <div className="max-w-4xl mx-auto flex justify-between items-center">
+              <p className="hidden md:block text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
+                Đang chấm {questions.length} câu hỏi
+              </p>
+              <Button type="submit" size="lg" className="w-full md:w-auto rounded-2xl px-12 font-bold shadow-lg shadow-primary/20 gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <CheckCircle className="h-5 w-5" />
                 Hoàn tất & Lưu điểm số
               </Button>
             </div>

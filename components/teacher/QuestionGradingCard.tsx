@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,23 +35,30 @@ export default function QuestionGradingCard({
                     part.includes('writing') ||
                     !!question.rubric
 
+  const maxScore = question.pointValue ?? 1
+  const initialScore = existing?.score ?? (isWriting ? 0 : autoScore)
+  const [currentScore, setCurrentScore] = useState<number>(initialScore)
+
   const renderMultiAnswer = (ans: string | string[] | undefined) => {
     if (!ans) return '—'
     if (Array.isArray(ans)) {
       return ans.map((a, i) => (
-        <div key={i} className="mb-0.5 last:mb-0">{a}</div>
+        <div key={i} className="mb-0.5 last:mb-0">
+          <FormattedText text={a} />
+        </div>
       ))
     }
-    return ans
+    return <FormattedText text={ans} />
   }
 
   return (
     <Card className={cn(
-      "overflow-hidden border-2 transition-all duration-300",
-      isWriting && isAI ? "border-amber-200/50 bg-amber-50/5 shadow-sm" : "border-border",
-      !isWriting && existing ? "border-primary/30" : ""
+      "overflow-hidden border-2 transition-all duration-300 shadow-sm",
+      currentScore >= maxScore ? "border-green-200 bg-green-50/30" : 
+      currentScore > 0 ? "border-amber-200 bg-amber-50/30" : 
+      "border-destructive/20 bg-destructive/5"
     )}>
-      <CardHeader className="bg-muted/30 pb-4">
+      <CardHeader className="bg-muted/10 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -114,7 +122,7 @@ export default function QuestionGradingCard({
                 Hướng dẫn chấm (Rubric)
               </div>
               <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-xs leading-relaxed text-blue-800 italic">
-                {question.rubric}
+                <FormattedText text={question.rubric} />
               </div>
             </div>
           )}
@@ -132,8 +140,12 @@ export default function QuestionGradingCard({
                 name={`feedback[${question.id}][score]`}
                 step="0.1"
                 min="0"
-                max={question.pointValue ?? 1}
-                defaultValue={existing?.score ?? (isWriting ? 0 : autoScore)}
+                max={maxScore}
+                value={currentScore}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value)
+                  setCurrentScore(isNaN(val) ? 0 : val)
+                }}
                 className="h-12 text-lg font-bold rounded-xl border-border/60 focus:ring-primary/20 bg-white"
               />
               {!isWriting && !existing && (
