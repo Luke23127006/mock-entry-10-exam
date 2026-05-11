@@ -296,6 +296,13 @@ export function ResultViewer({
                         </div>
                       ) : (
                         <div className="pl-12 space-y-4">
+                          {(q as any).prefix && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border/50 shadow-sm">
+                                <FormattedText text={(q as any).prefix} />
+                              </span>
+                            </div>
+                          )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-2">
                             <div className="space-y-1">
                               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your response</p>
@@ -307,8 +314,13 @@ export function ResultViewer({
                                     const oIdx = q.options?.indexOf(a)
                                     const label = (oIdx !== undefined && oIdx !== -1) ? `${String.fromCharCode(65 + oIdx)}. ` : ''
                                     return (
-                                      <div key={i}>
-                                        {label}<FormattedText text={a} />
+                                      <div key={i} className="flex items-center gap-1.5">
+                                        {(q as any).prefix && (
+                                          <span className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-[0.15em] shrink-0">
+                                            {(q as any).prefix}
+                                          </span>
+                                        )}
+                                        <FormattedText text={`${label}${a}`} />
                                       </div>
                                     )
                                   })

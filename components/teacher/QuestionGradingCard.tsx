@@ -30,6 +30,7 @@ export default function QuestionGradingCard({
   const isAI = existing?.isAI ?? false
   const type = (question.type || '').toLowerCase()
   const part = (question.part || '').toLowerCase()
+  const prefix = (question as any).prefix
   const isWriting = type.includes('writing') || 
                     type.includes('essay') || 
                     part.includes('d') || 
@@ -74,6 +75,13 @@ export default function QuestionGradingCard({
             <div className="text-sm text-foreground/80 leading-relaxed pl-10">
               <FormattedText text={question.content} />
             </div>
+            {prefix && (
+              <div className="pl-10 pt-2">
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] bg-muted/50 px-2 py-1 rounded border border-border/50">
+                  <FormattedText text={prefix} />
+                </span>
+              </div>
+            )}
           </div>
           {isWriting && isAI && (
             <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 gap-1.5 py-1 px-3">
@@ -99,7 +107,11 @@ export default function QuestionGradingCard({
               Bài làm của học sinh
             </div>
             <div className="rounded-2xl bg-white border shadow-sm p-4 text-sm leading-relaxed whitespace-pre-wrap min-h-[4rem] text-foreground/90 font-medium">
-              {renderMultiAnswer(studentAnswer)}
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  {renderMultiAnswer(studentAnswer)}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -111,7 +123,11 @@ export default function QuestionGradingCard({
                 Đáp án hệ thống
               </div>
               <div className="rounded-2xl bg-green-50 border border-green-100 shadow-inner p-4 text-sm leading-relaxed text-green-800 font-bold">
-                {renderMultiAnswer(question.correctAnswers)}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    {renderMultiAnswer(question.correctAnswers)}
+                  </div>
+                </div>
               </div>
             </div>
           )}
