@@ -156,7 +156,7 @@ export default function QuestionGradingCard({
               <Input
                 type="number"
                 name={`feedback[${question.id}][score]`}
-                step="0.1"
+                step="0.05"
                 min="0"
                 max={maxScore}
                 value={currentScore}
