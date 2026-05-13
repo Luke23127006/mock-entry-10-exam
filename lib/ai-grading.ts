@@ -1,7 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { Question, WritingFeedback } from '@/types/database'
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+import { generateWithFallback } from '@/lib/gemini-client'
 
 export async function gradeWritingWithAI(
   question: Question,
@@ -10,13 +8,6 @@ export async function gradeWritingWithAI(
   if (!studentAnswer || !studentAnswer.trim()) {
     return { score: 0, comment: 'Không có câu trả lời.', isAI: true }
   }
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-flash-latest',
-    generationConfig: {
-      responseMimeType: 'application/json',
-    },
-  })
 
   const questionInfo = `
 Section Instruction: ${(question as any)._sectionInstruction || 'No specific instruction'}
@@ -55,8 +46,11 @@ Provide:
 Output the response purely in JSON format: { "score": number, "feedback": "string (HTML)" }.`
 
   try {
-    const result = await model.generateContent(prompt)
-    const responseText = result.response.text()
+    const responseText = await generateWithFallback(
+      'gemini-flash-latest',
+      { responseMimeType: 'application/json' },
+      prompt,
+    )
     const parsed = JSON.parse(responseText)
 
     const aiScore = typeof parsed.score === 'number' ? parsed.score : 0
@@ -69,10 +63,10 @@ Output the response purely in JSON format: { "score": number, "feedback": "strin
     }
   } catch (err) {
     console.error(`Gemini grading failed for question ${question.id}:`, err)
-    return { 
-      score: 0, 
+    return {
+      score: 0,
       comment: 'An error occurred during AI auto-grading.',
-      isAI: true 
+      isAI: true,
     }
   }
 }

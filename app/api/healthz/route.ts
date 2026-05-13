@@ -1,53 +1,58 @@
 import { NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+import { API_KEYS, probeKey } from '@/lib/gemini-client'
 
 export async function GET() {
   const startedAt = new Date().toISOString()
 
-  // --- Gemini API check ---
-  let geminiStatus: 'ok' | 'error' = 'error'
-  let geminiLatencyMs: number | null = null
-  let geminiError: string | null = null
-
-  if (!process.env.GEMINI_API_KEY) {
-    geminiError = 'GEMINI_API_KEY environment variable is not set'
-  } else {
-    const t0 = Date.now()
-    try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
-      const result = await model.generateContent('Reply with the single word: ok')
-      const text = result.response.text().trim().toLowerCase()
-      geminiLatencyMs = Date.now() - t0
-
-      if (text.includes('ok')) {
-        geminiStatus = 'ok'
-      } else {
-        geminiError = `Unexpected response: "${text}"`
-      }
-    } catch (err: any) {
-      geminiLatencyMs = Date.now() - t0
-      geminiError = err?.message ?? 'Unknown error'
-    }
+  if (API_KEYS.length === 0) {
+    return NextResponse.json(
+      {
+        status: 'degraded',
+        timestamp: startedAt,
+        message: 'No GEMINI_API_KEY_N environment variables are configured.',
+        checks: { gemini: [] },
+      },
+      { status: 503 },
+    )
   }
 
-  // --- Aggregate ---
-  const healthy = geminiStatus === 'ok'
+  // Probe all keys in parallel
+  const probeResults = await Promise.all(API_KEYS.map((_, i) => probeKey(i)))
+
+  const keyChecks = probeResults.map((r, i) => ({
+    key: `GEMINI_API_KEY_${i + 1}`,
+    ...r,
+  }))
+
+  const okCount = keyChecks.filter((k) => k.status === 'ok').length
+  const rateLimitedCount = keyChecks.filter((k) => k.status === 'rate_limited').length
+
+  // Overall status
+  let overallStatus: 'ok' | 'degraded' | 'down'
+  if (okCount === API_KEYS.length) {
+    overallStatus = 'ok'
+  } else if (okCount > 0) {
+    overallStatus = 'degraded'
+  } else {
+    overallStatus = 'down'
+  }
+
+  const httpStatus = overallStatus === 'down' ? 503 : overallStatus === 'degraded' ? 207 : 200
 
   return NextResponse.json(
     {
-      status: healthy ? 'ok' : 'degraded',
+      status: overallStatus,
       timestamp: startedAt,
+      summary: {
+        total: API_KEYS.length,
+        ok: okCount,
+        rate_limited: rateLimitedCount,
+        error: API_KEYS.length - okCount - rateLimitedCount,
+      },
       checks: {
-        gemini: {
-          status: geminiStatus,
-          model: 'gemini-flash-latest',
-          latencyMs: geminiLatencyMs,
-          ...(geminiError ? { error: geminiError } : {}),
-        },
+        gemini: keyChecks,
       },
     },
-    { status: healthy ? 200 : 503 }
+    { status: httpStatus },
   )
 }
