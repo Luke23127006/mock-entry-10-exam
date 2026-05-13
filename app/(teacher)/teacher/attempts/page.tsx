@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, GraduationCap, Clock, FileCheck, Search } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { ChevronLeft, GraduationCap, Search } from 'lucide-react'
 import type { ExamAttempt, User, Exam } from '@/types/database'
 import { cn } from '@/lib/utils'
+import AttemptSearchGrid from '@/components/teacher/AttemptSearchGrid'
 
 interface Props {
   searchParams: Promise<{ examId?: string }>
@@ -87,62 +87,21 @@ export default async function AttemptsPage({ searchParams }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(attempts as (AttemptRow & { user_id: string })[]).map((attempt) => {
+          <AttemptSearchGrid 
+            attempts={(attempts as (AttemptRow & { user_id: string })[]).map(attempt => {
               const user = userMap.get(attempt.user_id)
               const exam = examMap.get(attempt.exam_id)
-              const hasWritingPending =
-                attempt.feedback === null ||
-                (typeof attempt.feedback === 'object' && Object.keys(attempt.feedback).length === 0)
-
-              return (
-                <Card key={attempt.id} className="rounded-2xl border-primary/10 hover:shadow-md transition-shadow overflow-hidden group">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                          {user?.full_name ?? user?.username ?? 'Học student'}
-                        </CardTitle>
-                        <CardDescription className="font-medium line-clamp-1">{exam?.title ?? 'Đề thi'}</CardDescription>
-                      </div>
-                      {hasWritingPending ? (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-[10px] uppercase tracking-widest gap-1 py-1">
-                          <Clock className="h-3 w-3" />
-                          Chờ chấm
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 text-[10px] uppercase tracking-widest gap-1 py-1">
-                          <FileCheck className="h-3 w-3" />
-                          Đã chấm
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4 space-y-4">
-                    <div className="flex items-baseline gap-1.5 bg-muted/30 p-3 rounded-xl">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Điểm số:</p>
-                      <p className="text-xl font-black text-primary">
-                        {attempt.score || '0'}
-                        <span className="text-sm font-semibold text-muted-foreground ml-1">
-                          / {examMaxScoreMap.get(attempt.exam_id) ?? '?'} PTS
-                        </span>
-                      </p>
-                    </div>
-                    <Link
-                      href={`/teacher/attempts/${attempt.id}`}
-                      className={cn(
-                        buttonVariants({ size: 'sm', variant: hasWritingPending ? 'default' : 'secondary' }),
-                        "w-full rounded-xl font-bold transition-all active:scale-[0.98]",
-                        hasWritingPending && "shadow-lg shadow-primary/20"
-                      )}
-                    >
-                      {hasWritingPending ? 'Bắt đầu chấm bài' : 'Xem lại chi tiết'}
-                    </Link>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+              return {
+                ...attempt,
+                userName: user?.full_name ?? user?.username ?? 'Học sinh',
+                examTitle: exam?.title ?? 'Đề thi',
+                maxScore: examMaxScoreMap.get(attempt.exam_id) ?? 0,
+                hasWritingPending: 
+                  attempt.feedback === null ||
+                  (typeof attempt.feedback === 'object' && Object.keys(attempt.feedback).length === 0)
+              }
+            })} 
+          />
         )}
       </div>
     </main>

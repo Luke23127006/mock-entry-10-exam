@@ -41,10 +41,16 @@ export default async function TeacherDashboard() {
             <h2 className="text-xl font-semibold tracking-tight">Danh sách đề thi</h2>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Quản lý và theo dõi bài làm</p>
           </div>
-          <Link href="/teacher/exams/new" className={cn(buttonVariants({ size: 'default' }), "rounded-2xl px-6 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]")}>
-            <Plus className="h-5 w-5 mr-2" />
-            Tạo đề thi mới
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/teacher/attempts" className={cn(buttonVariants({ variant: 'outline' }), "rounded-2xl px-6 font-semibold border-primary/20 hover:bg-primary/5 transition-all shadow-sm")}>
+              <ClipboardList className="h-5 w-5 mr-2" />
+              Xem tất cả bài nộp
+            </Link>
+            {/* <Link href="/teacher/exams/new" className={cn(buttonVariants({ size: 'default' }), "rounded-2xl px-6 font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]")}>
+              <Plus className="h-5 w-5 mr-2" />
+              Tạo đề thi mới
+            </Link> */}
+          </div>
         </div>
 
         <TeacherExamList exams={(exams || []) as any[]} />
@@ -54,5 +60,5 @@ export default async function TeacherDashboard() {
 }
 
 import { cn } from '@/lib/utils'
-import { Plus, User, LogOut } from 'lucide-react'
+import { Plus, User, LogOut, ClipboardList } from 'lucide-react'
 import { TeacherExamList } from '@/components/teacher/teacher-exam-list'
