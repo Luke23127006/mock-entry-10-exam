@@ -1,9 +1,11 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/supabase'
 import { getSession } from '@/lib/session'
 import { scoreExam, computeFinalScore } from '@/lib/scoring'
+import { gradeWritingWithAI } from '@/lib/ai-grading'
 import type { Exam, ExamAttempt, Question, WritingFeedback } from '@/types/database'
 
 async function requireTeacher() {
@@ -94,4 +96,88 @@ export async function submitWritingFeedback(
     .eq('id', attemptId)
 
   redirect('/teacher/attempts')
+}
+
+export async function resubmitForStudent(
+  attemptId: string,
+): Promise<{ success: boolean; error?: string }> {
+  await requireTeacher()
+
+  // 1. Fetch attempt (answers already saved)
+  const { data: attempt } = await supabase
+    .from('exam_attempts')
+    .select('exam_id, answers, feedback')
+    .eq('id', attemptId)
+    .single<Pick<ExamAttempt, 'exam_id' | 'answers' | 'feedback'>>()
+
+  if (!attempt) return { success: false, error: 'Attempt not found' }
+
+  // 2. Fetch exam content
+  const { data: exam } = await supabase
+    .from('exams')
+    .select('content')
+    .eq('id', attempt.exam_id)
+    .single<Pick<Exam, 'content'>>()
+
+  if (!exam) return { success: false, error: 'Exam not found' }
+
+  const content = exam.content as any
+  const allQuestions: Question[] = [
+    ...(content.questions || []),
+    ...(content.sections?.flatMap((s: any) => {
+      const comps = s.components || []
+      comps.forEach((q: any) => {
+        q._sectionInstruction = s.instruction
+        q._sectionPassage = s.readingPassage
+      })
+      return comps
+    }) || []),
+  ]
+
+  // 3. Re-run AI grading for writing questions
+  const writingQuestions = allQuestions.filter((q: Question) => {
+    const type = (q.type || '').toLowerCase()
+    const part = (q.part || '').toLowerCase()
+    return (
+      type.includes('writing') ||
+      type.includes('essay') ||
+      part.includes('d') ||
+      part.includes('writing') ||
+      !!q.rubric
+    )
+  })
+
+  const newAIFeedback: Record<string, WritingFeedback> = {}
+  for (const wq of writingQuestions) {
+    const studentAnswer = (attempt.answers as Record<string, string>)[wq.id] ?? ''
+    newAIFeedback[wq.id] = await gradeWritingWithAI(wq, studentAnswer)
+  }
+
+  // 4. Preserve existing teacher-approved feedback, overlay with new AI results
+  let existingFeedback: Record<string, WritingFeedback> = {}
+  if (attempt.feedback) {
+    if (typeof attempt.feedback === 'string') {
+      try { existingFeedback = JSON.parse(attempt.feedback) } catch {}
+    } else {
+      existingFeedback = attempt.feedback as Record<string, WritingFeedback>
+    }
+  }
+  // Keep teacher-approved (isAI=false) scores; replace AI-generated ones
+  const mergedFeedback: Record<string, WritingFeedback> = { ...existingFeedback }
+  for (const [qId, fb] of Object.entries(newAIFeedback)) {
+    if (!mergedFeedback[qId] || mergedFeedback[qId].isAI !== false) {
+      mergedFeedback[qId] = fb
+    }
+  }
+
+  // 5. Persist + re-sync scores
+  await supabase
+    .from('exam_attempts')
+    .update({ feedback: mergedFeedback, status: 'completed', is_graded: false })
+    .eq('id', attemptId)
+
+  await syncAttempt(attemptId)
+
+  revalidatePath(`/teacher/attempts/${attemptId}`)
+  return { success: true }
 }

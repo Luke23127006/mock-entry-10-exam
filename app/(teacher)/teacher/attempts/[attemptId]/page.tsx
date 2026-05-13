@@ -5,6 +5,7 @@ import { submitWritingFeedback } from '@/app/actions/teacher'
 import { buttonVariants } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 import QuestionGradingCard from '@/components/teacher/QuestionGradingCard'
+import ResubmitButton from '@/components/teacher/ResubmitButton'
 import type { Exam, ExamAttempt, User, Question, WritingFeedback } from '@/types/database'
 import { ChevronLeft, PencilLine, CheckCircle, UserCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -128,14 +129,17 @@ export default async function FeedbackPage({ params }: Props) {
           })}
           
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-primary/10 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-50">
-            <div className="max-w-4xl mx-auto flex justify-between items-center">
+            <div className="max-w-4xl mx-auto flex flex-wrap justify-between items-center gap-3">
               <p className="hidden md:block text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
                 Đang chấm {questions.length} câu hỏi
               </p>
-              <Button type="submit" size="lg" className="w-full md:w-auto rounded-2xl px-12 font-bold shadow-lg shadow-primary/20 gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <CheckCircle className="h-5 w-5" />
-                Hoàn tất & Lưu điểm số
-              </Button>
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <ResubmitButton attemptId={attemptId} />
+                <Button type="submit" size="lg" className="flex-1 md:flex-none rounded-2xl px-12 font-bold shadow-lg shadow-primary/20 gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                  <CheckCircle className="h-5 w-5" />
+                  Hoàn tất & Lưu điểm số
+                </Button>
+              </div>
             </div>
           </div>
         </form>
