@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { resubmitForStudent } from '@/app/actions/teacher'
 import { RefreshCcw, CheckCircle2, AlertCircle } from 'lucide-react'
@@ -10,6 +11,7 @@ interface ResubmitButtonProps {
 }
 
 export default function ResubmitButton({ attemptId }: ResubmitButtonProps) {
+  const router = useRouter()
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -20,6 +22,7 @@ export default function ResubmitButton({ attemptId }: ResubmitButtonProps) {
       const result = await resubmitForStudent(attemptId)
       if (result.success) {
         setState('success')
+        router.refresh()
         // Reset back to idle after 3 s so the button is reusable
         setTimeout(() => setState('idle'), 3000)
       } else {

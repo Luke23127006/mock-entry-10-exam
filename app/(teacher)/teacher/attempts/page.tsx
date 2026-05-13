@@ -32,11 +32,23 @@ export default async function AttemptsPage({ searchParams }: Props) {
 
   const [{ data: users }, { data: exams }] = await Promise.all([
     supabase.from('users').select('id, full_name, username').in('id', userIds.length ? userIds : ['none']),
-    supabase.from('exams').select('id, title').in('id', examIds.length ? examIds : ['none']),
+    supabase.from('exams').select('id, title, content').in('id', examIds.length ? examIds : ['none']),
   ])
 
   const userMap = new Map((users as UserRow[] ?? []).map((u) => [u.id, u]))
-  const examMap = new Map((exams as Pick<Exam, 'id' | 'title'>[] ?? []).map((e) => [e.id, e]))
+  const examMap = new Map((exams as Pick<Exam, 'id' | 'title' | 'content'>[] ?? []).map((e) => [e.id, e]))
+
+  // Pre-compute max score per exam to avoid recalculating in the loop
+  const examMaxScoreMap = new Map<string, number>()
+  examMap.forEach((exam, examId) => {
+    const content = exam.content as any
+    const questions = [
+      ...(content?.questions || []),
+      ...(content?.sections?.flatMap((s: any) => s.components) || []),
+    ]
+    const max = Math.round(questions.reduce((sum: number, q: any) => sum + (q.pointValue ?? 1), 0) * 100) / 100
+    examMaxScoreMap.set(examId, max)
+  })
 
   return (
     <main className="min-h-screen bg-muted/30 py-10 px-4">
@@ -109,7 +121,12 @@ export default async function AttemptsPage({ searchParams }: Props) {
                   <CardContent className="pb-4 space-y-4">
                     <div className="flex items-baseline gap-1.5 bg-muted/30 p-3 rounded-xl">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Điểm số:</p>
-                      <p className="text-xl font-black text-primary">{attempt.score || '0'}</p>
+                      <p className="text-xl font-black text-primary">
+                        {attempt.score || '0'}
+                        <span className="text-sm font-semibold text-muted-foreground ml-1">
+                          / {examMaxScoreMap.get(attempt.exam_id) ?? '?'} PTS
+                        </span>
+                      </p>
                     </div>
                     <Link
                       href={`/teacher/attempts/${attempt.id}`}

@@ -38,6 +38,9 @@ export default async function FeedbackPage({ params }: Props) {
     ...(content.sections?.flatMap((s: any) => s.components) || [])
   ]
 
+  const maxScore = Math.round(questions.reduce((sum: number, q: any) => sum + (q.pointValue ?? 1), 0) * 100) / 100
+  const totalScore = attempt.score ? parseFloat(attempt.score) : null
+
   let existingFeedback: Record<string, WritingFeedback> = {}
   if (attempt.feedback) {
     if (typeof attempt.feedback === 'string' && (attempt.feedback as string).trim() !== '') {
@@ -99,10 +102,15 @@ export default async function FeedbackPage({ params }: Props) {
                 <span className="opacity-30">•</span>
                 <span className="line-clamp-1">{exam.title}</span>
               </div>
+              {totalScore !== null && (
+                <p className="mt-2 text-3xl font-extrabold text-primary tabular-nums tracking-tight">
+                  {totalScore.toFixed(2)} <span className="text-base font-semibold text-muted-foreground">/ {maxScore} PTS</span>
+                </p>
+              )}
             </div>
           </div>
-          <Link 
-            href="/teacher/attempts" 
+          <Link
+            href="/teacher/attempts"
             className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "rounded-full px-4 border-primary/20 hover:bg-primary/5 transition-all gap-1.5 shadow-sm self-start md:self-center")}
           >
             <ChevronLeft className="h-4 w-4" />
