@@ -87,26 +87,44 @@ All question types support these optional fields:
 }
 ```
 
-### C. Reading Passage + Questions (Preferred Pattern)
+### C. Short Writing
+**Use for**: Factual short-answer questions (e.g., Reading Comprehension short answers).
+- **Grading**: Graded by AI because there may be multiple valid ways to answer. Provide multiple variations in `correctAnswers` to serve as a reference for AI grading.
+
+```json
+{
+  "id": "q26",
+  "type": "short_writing",
+  "content": "When and where was Thomas Edison born?",
+  "pointValue": 0.4,
+  "correctAnswers": [
+    "He was born in 1847 in the United States.",
+    "In 1847 in the United States."
+  ]
+}
+```
+
+### D. Reading Passage + Questions (Preferred Pattern)
 **Use for**: Cloze tests or Reading Comprehension.
-- **Logic**: Instead of a special `cloze` type, place the text in the section's `readingPassage` field and add individual `mcq` questions to the `components` array.
+- **Logic**: Place the text in the section's `readingPassage` field. For cloze tests, provide a `wordBank` if applicable.
 - **Placeholder**: Manually type `(21) _______` inside the reading passage text.
 - **Question Labels**: Set the MCQ `content` to `(21)` to match the text.
 - **Optimization**: Use `"variant": "compact"` and `"layout": "1x4"` for a professional paper-like look.
 
 ```json
 {
-  "title": "Part III: Reading",
-  "instruction": "Read the following passage and choose the best answer for each blank. Note: Pay attention to capitalization and punctuation!",
-  "readingPassage": "London is the (21) _______ city in the UK. Many people (22) _______ it every year...",
+  "title": "PART C. READING COMPREHENSION - Section I",
+  "instruction": "Read the following paragraph and fill in each gap with a suitable word provided in the box.",
+  "wordBank": ["however", "because", "which", "for", "into", "on"],
+  "readingPassage": "The invention of the Internet has changed the way we communicate and share information. It was created (21) ______ people to exchange data easily...",
   "components": [
     {
       "id": "q21",
       "type": "mcq",
       "content": "(21)",
-      "options": ["largest", "larger", "large", "most large"],
-      "correctAnswers": ["largest"],
-      "pointValue": 0.25,
+      "options": ["however", "because", "which", "for", "into", "on"],
+      "correctAnswers": ["for"],
+      "pointValue": 0.2,
       "variant": "compact",
       "layout": "1x4"
     }
@@ -114,19 +132,19 @@ All question types support these optional fields:
 }
 ```
 
-### D. Essay / Writing
+### E. Essay / Writing
 **Use for**: Paragraph writing, Letter writing.
-- **Note**: These are not auto-graded. A teacher must provide feedback.
+- **Grading**: Graded by AI, which will evaluate the response semantically based on the prompt, `minWords`, `maxWords`, and any `explanation` or rubric provided.
 
 ```json
 {
-  "id": "q4",
+  "id": "q36",
   "type": "essay",
-  "promptText": "Write a paragraph (100-150 words) about your favorite hobby.",
+  "promptText": "Write a paragraph (100-120 words) about the benefits of doing housework for teenagers.",
   "minWords": 100,
-  "maxWords": 150,
-  "rubric": "Structure (2pts), Grammar (3pts), Content (5pts)",
-  "pointValue": 10
+  "maxWords": 120,
+  "pointValue": 1,
+  "explanation": "Doing housework brings many significant benefits for teenagers..."
 }
 ```
 
