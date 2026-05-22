@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
-import { scoreExam, computeFinalScore } from '@/lib/scoring'
+import { getSession } from '@/lib/session'
 import { gradeWritingWithAI } from '@/lib/ai-grading'
 import type { ExamAttempt, Exam, Question, WritingFeedback } from '@/types/database'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('session_user_id')?.value
+    const session = await getSession()
 
-    if (!userId) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const userId = session.id
 
     const body = await req.json()
     const { attemptId, answers } = body as {
@@ -25,12 +24,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Fetch attempt and exam
-    const { data: attempt } = await supabase
+    let query = supabase
       .from('exam_attempts')
       .select('exam_id, status')
       .eq('id', attemptId)
-      .eq('user_id', userId)
-      .single<Pick<ExamAttempt, 'exam_id' | 'status'>>()
+      
+    if (session.role !== 'teacher') {
+      query = query.eq('user_id', userId)
+    }
+    
+    const { data: attempt } = await query.single<Pick<ExamAttempt, 'exam_id' | 'status'>>()
 
     if (!attempt) {
       return NextResponse.json({ error: 'Attempt not found' }, { status: 404 })
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Update initial attempt data and sync scores
-    const { error: updateError } = await supabase
+    let updateQuery = supabase
       .from('exam_attempts')
       .update({
         answers,
@@ -92,7 +95,12 @@ export async function POST(req: NextRequest) {
         is_graded: false
       })
       .eq('id', attemptId)
-      .eq('user_id', userId)
+
+    if (session.role !== 'teacher') {
+      updateQuery = updateQuery.eq('user_id', userId)
+    }
+
+    const { error: updateError } = await updateQuery
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 })
